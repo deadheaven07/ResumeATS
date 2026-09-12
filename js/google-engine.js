@@ -20,11 +20,34 @@ export const GOOGLE_TECH_TAXONOMY = [
 // Curated Google Engineering Job Profiles
 export const GOOGLE_JOB_PROFILES = [
   {
+    id: "google_swe_l3",
+    title: "Google Software Engineer II (L3) - Core Systems & Applications",
+    level: "L3 (SWE II)",
+    overview: "Write high-quality clean code, implement algorithms and data structures, and build features across Google Search, YouTube, Android, or Cloud.",
+    requirements: `Role: Google Software Engineer II (L3) - Core Systems & Applications
+Level: L3 (SWE II)
+
+Minimum qualifications:
+- Bachelor's or Master's degree in Computer Science, Computer Engineering, or related technical field, or equivalent practical experience.
+- Experience programming in one or more general-purpose languages including C++, Java, Python, or Go (Golang).
+- Strong foundation in Data Structures, Algorithms, time/space complexity analysis (Big-O), and object-oriented design.
+- Experience with unit testing, code reviews, and Git version control.
+
+Preferred qualifications:
+- Internship or 1-2 years of software engineering industry experience.
+- Experience building RESTful APIs, web applications, or scalable database integrations.
+- Active involvement in technical projects, open-source repositories, or competitive programming (e.g. LeetCode / Codeforces).
+- Strong communication, intellectual curiosity, and ability to collaborate across diverse technical teams.`
+  },
+  {
     id: "google_swe_l5",
     title: "Google Senior Software Engineer (L5) - Distributed Systems & Cloud Platforms",
     level: "L5 (Senior)",
     overview: "Architect, develop, and scale mission-critical distributed systems and backend cloud infrastructure serving billions of queries per day.",
-    requirements: `Minimum qualifications:
+    requirements: `Role: Google Senior Software Engineer (L5) - Distributed Systems & Cloud Platforms
+Level: L5 (Senior)
+
+Minimum qualifications:
 - Bachelor's degree in Computer Science or equivalent practical experience.
 - 5+ years of software development experience with Go, C++, Java, or Python.
 - 3+ years architecting, designing, and scaling distributed backend systems, microservices, or high-throughput data platforms.
@@ -41,7 +64,10 @@ Preferred qualifications:
     title: "Google Software Engineer (L4/L5) - Machine Learning & Generative AI Systems",
     level: "L4 / L5",
     overview: "Build, optimize, and deploy cutting-edge Machine Learning and Large Language Model (LLM) inference pipelines at Google scale.",
-    requirements: `Minimum qualifications:
+    requirements: `Role: Google Software Engineer (L4/L5) - Machine Learning & Generative AI Systems
+Level: L4 / L5
+
+Minimum qualifications:
 - Bachelor's degree in Computer Science, Mathematics, or equivalent practical experience.
 - 4+ years of software engineering experience in Python or C++.
 - 2+ years deploying production Machine Learning, NLP, or Generative AI models.
@@ -57,7 +83,10 @@ Preferred qualifications:
     title: "Google Site Reliability Engineer (SRE) - Global Reliability & Infrastructure",
     level: "L4 / L5",
     overview: "Ensure Google's planetary-scale services remain ultra-reliable, highly available, and resilient through automated software engineering.",
-    requirements: `Minimum qualifications:
+    requirements: `Role: Google Site Reliability Engineer (SRE) - Global Reliability & Infrastructure
+Level: L4 / L5
+
+Minimum qualifications:
 - Bachelor's degree in Computer Science or equivalent practical experience.
 - 4+ years of experience with Unix/Linux operating system internals, networking (TCP/IP, HTTP/2, gRPC), and systems programming (Go, Python, C++).
 - Hands-on mastery of Kubernetes, Terraform, and automated CI/CD deployment pipelines.
@@ -80,12 +109,21 @@ export function extractQuantifiableMetrics(text) {
     /\b\d+(\.\d+)?%/i,                                              // 35%, 99.99%
     /\$\d+([kKmMbB]|\,\d{3})*(\.\d+)?/i,                            // $180k, $1.2M, $45,000
     /\b\d+(\.\d+)?\s*(ms|seconds|minutes|hours|days|x|fold)\b/i,      // 45ms, 2.5x, 3x
-    /\b\d+(\.\d+)?[kKmMbB]\+?\s*(users|requests|queries|events|tps|qps|dau|mau)\b/i, // 1.2M users, 50k TPS
+    /\b\d+(\.\d+)?x\b/i,                                            // 3.2x, 10x
+    /\b\d+(\.\d+)?\s*(kb|mb|gb|tb|pb)\b/i,                          // 45MB, 2GB
+    /\b\d+(\.\d+)?[kKmMbB]\+?\s*(users|requests|queries|events|tps|qps|items|records|dau|mau)\b/i, // 1.2M users, 50k TPS, 2.5M items
+    /\b\d+\+?\s*(unit\s+tests|tests|services|nodes|microservices|servers|clusters|endpoints|apis|race\s+conditions)\b/i,
+    /\b(zero|0)\s+(data\s+race\s+alerts|alerts|incidents|downtime|outages|failures|drops)\b/i,
     /\b(reduced|decreased|increased|accelerated|improved|saved)\s+by\s+\d+(\.\d+)?%/i
   ];
 
   const matches = [];
-  const lines = text.split("\n").filter(l => l.trim().length > 0 && (l.trim().startsWith("-") || l.trim().startsWith("•") || l.trim().length > 25));
+  const rawLines = text.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+  const bulletLines = rawLines.filter(l => l.startsWith("-") || l.startsWith("•") || l.startsWith("*") || /^\d+[\.\)]\s/.test(l));
+  const experienceBullets = bulletLines.filter(l => !/^[-\•\*]\s*[A-Za-z\s\&\/]{3,30}:\s+/i.test(l));
+  const lines = experienceBullets.length > 0 
+    ? experienceBullets 
+    : rawLines.filter(l => l.length > 30 && !l.endsWith(":") && !/^(summary|education|experience|skills|contact|projects)/i.test(l));
 
   let bulletsWithMetrics = 0;
 
@@ -158,6 +196,12 @@ export function evaluateGoogleEngineeringLevel(text) {
     "unit tests", "integration tests", "apis", "features"
   ];
 
+  // Signals for L3 SWE II: algorithms, data structures, big-o, unit tests, code reviews, debugging, git
+  const l3Signals = [
+    "data structures", "algorithms", "big-o", "complexity", "unit tests", "test coverage",
+    "c++", "java", "python", "go", "protocol buffers", "protobuf", "git", "ci/cd", "rest", "api", "benchmarks"
+  ];
+
   let l6Count = 0;
   l6Signals.forEach(s => { if (normalized.includes(s)) l6Count++; });
 
@@ -166,6 +210,9 @@ export function evaluateGoogleEngineeringLevel(text) {
 
   let l4Count = 0;
   l4Signals.forEach(s => { if (normalized.includes(s)) l4Count++; });
+
+  let l3Count = 0;
+  l3Signals.forEach(s => { if (normalized.includes(s)) l3Count++; });
 
   if (l6Count >= 3 || (l6Count >= 2 && l5Count >= 5)) {
     return {
@@ -206,14 +253,27 @@ export function evaluateGoogleEngineeringLevel(text) {
     };
   }
 
+  if (l3Count >= 3) {
+    return {
+      level: "L3",
+      title: "L3 (Software Engineer II / Core SWE)",
+      badgeClass: "badge-success",
+      summary: "Solid alignment with Google SWE II (L3) expectations: strong CS fundamentals, rigorous testing, and measurable component delivery.",
+      recommendations: [
+        "Highlight algorithmic complexity trade-offs (time vs space Big-O) in project bullets.",
+        "To accelerate growth toward L4 (SWE III), demonstrate end-to-end feature ownership and independent API design."
+      ]
+    };
+  }
+
   return {
     level: "L3",
-    title: "L3 (Software Engineer II / Associate)",
+    title: "L3 (Software Engineer II / Developing)",
     badgeClass: "badge-neutral",
-    summary: "Task-oriented execution. To reach Google L4/L5, emphasize end-to-end component ownership and measurable outcomes.",
+    summary: "Task-oriented execution. To meet Google's technical bar, strengthen algorithmic depth, unit testing coverage, and quantifiable metric impact.",
     recommendations: [
       "Connect every technical task to a quantifiable business or latency metric.",
-      "Highlight distributed system patterns (caching, queuing, concurrency) over basic CRUD operations."
+      "Highlight core CS foundations: Big-O analysis, multithreading, and automated test frameworks (e.g. GoogleTest, pytest)."
     ]
   };
 }
@@ -263,8 +323,20 @@ export function auditGoogleAtsProfile(resumeText, targetGoogleJdText) {
   gcaKeywords.forEach(k => { if (resumeText.toLowerCase().includes(k)) gcaMatches++; });
   const gcaScore = Math.min(100, Math.round((gcaMatches / 4) * 100));
 
-  // 4. Leadership & Googleyness: mentorship, postmortem, cross-functional, open-source
-  const leadKeywords = ["mentored", "led", "cross-functional", "postmortem", "collaborated", "aligned", "directed", "authored", "standardized", "established"];
+  const normalizedJd = (targetGoogleJdText || "").toLowerCase();
+  const isL3Target = normalizedJd.includes("l3") || 
+                     normalizedJd.includes("software engineer ii") ||
+                     normalizedJd.includes("swe ii") ||
+                     normalizedJd.includes("internship or 1-2 years") ||
+                     normalizedJd.includes("early career");
+
+  // 4. Leadership & Googleyness:
+  // For L3: collaboration, code reviews, quality, open-source, standardizing, testing
+  // For L5+: mentorship, cross-functional alignment, RFCs, postmortems
+  const leadKeywords = isL3Target
+    ? ["collaborated", "authored", "standardized", "code reviews", "open-source", "quality", "curiosity", "agile", "team", "peer", "guidelines", "linting", "tests"]
+    : ["mentored", "led", "cross-functional", "postmortem", "collaborated", "aligned", "directed", "authored", "standardized", "established"];
+
   let leadMatches = 0;
   leadKeywords.forEach(k => { if (resumeText.toLowerCase().includes(k)) leadMatches++; });
   const leadershipScore = Math.min(100, Math.round((leadMatches / 3) * 100));
@@ -273,27 +345,42 @@ export function auditGoogleAtsProfile(resumeText, targetGoogleJdText) {
   const levelEval = evaluateGoogleEngineeringLevel(resumeText);
 
   // Google Weighted Score Calculation:
-  // XYZ Density: 35%, Technical Depth (RRK): 30%, GCA: 20%, Leadership: 15%
-  const compositeScore = Math.round(
-    (metricAudit.densityScore * 0.35) +
-    (rrkScore * 0.30) +
-    (gcaScore * 0.20) +
-    (leadershipScore * 0.15)
-  );
+  // For L3: RRK 35%, Metric Density 35%, GCA 20%, Googleyness/Collaboration 10%
+  // For L5+: Metric Density 35%, RRK 30%, GCA 20%, Leadership 15%
+  const compositeScore = isL3Target
+    ? Math.round((metricAudit.densityScore * 0.35) + (rrkScore * 0.35) + (gcaScore * 0.20) + (leadershipScore * 0.10))
+    : Math.round((metricAudit.densityScore * 0.35) + (rrkScore * 0.30) + (gcaScore * 0.20) + (leadershipScore * 0.15));
 
   const googleAtsScore = Math.min(100, Math.max(15, compositeScore));
 
   let tier = "High Gap for Google Bar";
   let tierColor = "var(--accent-rose)";
-  if (googleAtsScore >= 85) {
-    tier = "Google Strong Match (L5 / L6 Candidate)";
-    tierColor = "var(--accent-emerald)";
-  } else if (googleAtsScore >= 70) {
-    tier = "Competitive for Google Screening (L4 / L5)";
-    tierColor = "var(--accent-cyan)";
-  } else if (googleAtsScore >= 55) {
-    tier = "Moderate Alignment (Needs XYZ Metric Focus)";
-    tierColor = "var(--accent-amber)";
+
+  if (isL3Target) {
+    if (googleAtsScore >= 80) {
+      tier = "Google Strong Match (L3 SWE II Ready)";
+      tierColor = "var(--accent-emerald)";
+    } else if (googleAtsScore >= 65) {
+      tier = "Competitive for Google L3 Screening";
+      tierColor = "var(--accent-cyan)";
+    } else if (googleAtsScore >= 50) {
+      tier = "Moderate Alignment for L3 (Needs Big-O & Metric Depth)";
+      tierColor = "var(--accent-amber)";
+    } else {
+      tier = "High Gap for Google L3 Bar";
+      tierColor = "var(--accent-rose)";
+    }
+  } else {
+    if (googleAtsScore >= 85) {
+      tier = "Google Strong Match (L5 / L6 Candidate)";
+      tierColor = "var(--accent-emerald)";
+    } else if (googleAtsScore >= 70) {
+      tier = "Competitive for Google Screening (L4 / L5)";
+      tierColor = "var(--accent-cyan)";
+    } else if (googleAtsScore >= 55) {
+      tier = "Moderate Alignment (Needs XYZ Metric Focus)";
+      tierColor = "var(--accent-amber)";
+    }
   }
 
   return {

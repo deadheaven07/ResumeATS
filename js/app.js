@@ -997,6 +997,74 @@ function initGoogleCopilot() {
   const btnRunAudit = document.getElementById("btn-run-google-audit");
   const btnLoadSample = document.getElementById("btn-load-google-sample");
 
+  // Google XYZ Formula Rewriter Inputs
+  const xInput = document.getElementById("xyz-x-input");
+  const yInput = document.getElementById("xyz-y-input");
+  const zInput = document.getElementById("xyz-z-input");
+  const xyzOutput = document.getElementById("xyz-live-output");
+  const btnCopyXyz = document.getElementById("btn-copy-xyz");
+  const btnAppendXyz = document.getElementById("btn-append-xyz");
+
+  // Role-specific XYZ formula presets
+  const roleXyzDefaults = {
+    google_swe_l3: {
+      x: "optimized graph traversal latency for social connection queries",
+      y: "a 38% decrease in memory consumption and O(V+E) time complexity",
+      z: "implementing an optimized bidirectional BFS in C++ with GoogleTest coverage"
+    },
+    google_swe_l5: {
+      x: "accelerated payment transaction throughput to 50k TPS",
+      y: "a 42% decrease in p99 response times and zero message drops",
+      z: "architecting an event-driven Go and Kafka streaming architecture with distributed Redis caching"
+    },
+    google_ml_l5: {
+      x: "reduced LLM inference latency across 10M daily requests",
+      y: "a 3.4x throughput boost and 40% reduction in GPU memory consumption",
+      z: "implementing FP16 quantization, speculative decoding, and vLLM batching in Python and C++"
+    },
+    google_sre: {
+      x: "eliminated cluster failover downtime during multi-region outages",
+      y: "achieving 99.999% system availability and reducing MTTR by 65%",
+      z: "engineering automated Kubernetes cross-region failover controllers and Prometheus alerting in Go"
+    }
+  };
+
+  function updateXyzPreview() {
+    if (!xyzOutput) return;
+    const xVal = xInput ? xInput.value.trim() : "";
+    const yVal = yInput ? yInput.value.trim() : "";
+    const zVal = zInput ? zInput.value.trim() : "";
+
+    if (!xVal && !yVal && !zVal) {
+      xyzOutput.innerHTML = `Accomplished <span class="xyz-span-x">[X]</span> as measured by <span class="xyz-span-y">[Y]</span>, by <span class="xyz-span-z">[Z]</span>.`;
+      return;
+    }
+
+    xyzOutput.innerHTML = `Accomplished <span class="xyz-span-x">${xVal || "[X Result]"}</span> as measured by <span class="xyz-span-y">${yVal || "[Y Metric]"}</span>, by <span class="xyz-span-z">${zVal || "[Z Technical Implementation]"}</span>.`;
+  }
+
+  function applyRoleSelection(roleId) {
+    const role = GOOGLE_JOB_PROFILES.find(r => r.id === roleId) || GOOGLE_JOB_PROFILES[0];
+    document.querySelectorAll(".google-role-card").forEach(c => {
+      c.classList.toggle("active", c.getAttribute("data-id") === role.id);
+    });
+    jdInput.value = role.requirements;
+    levelBadge.textContent = role.level;
+
+    if (btnLoadSample) {
+      btnLoadSample.textContent = role.id === "google_swe_l3"
+        ? "Load Google L3 (SWE II) Sample"
+        : "Load Google L5 Senior Sample";
+    }
+
+    if (roleXyzDefaults[role.id] && xInput && yInput && zInput) {
+      xInput.value = roleXyzDefaults[role.id].x;
+      yInput.value = roleXyzDefaults[role.id].y;
+      zInput.value = roleXyzDefaults[role.id].z;
+      updateXyzPreview();
+    }
+  }
+
   // Render role selector cards
   if (roleSelectorGrid) {
     roleSelectorGrid.innerHTML = "";
@@ -1014,24 +1082,45 @@ function initGoogleCopilot() {
       `;
 
       card.addEventListener("click", () => {
-        document.querySelectorAll(".google-role-card").forEach(c => c.classList.remove("active"));
-        card.classList.add("active");
-        jdInput.value = role.requirements;
-        levelBadge.textContent = role.level;
+        applyRoleSelection(role.id);
         showToast(`Loaded Google Rubric: ${role.title.split(" - ")[0]}`, "info");
       });
 
       roleSelectorGrid.appendChild(card);
     });
 
-    // Default to first profile
+    // Default to first profile (Google L3)
     if (GOOGLE_JOB_PROFILES[0]) {
-      jdInput.value = GOOGLE_JOB_PROFILES[0].requirements;
-      levelBadge.textContent = GOOGLE_JOB_PROFILES[0].level;
+      applyRoleSelection(GOOGLE_JOB_PROFILES[0].id);
     }
   }
 
-  // Load Google Candidate Sample
+  // Google L3 (Software Engineer II / Early Career) Candidate Sample
+  const googleL3SampleResume = `Maya Patel
+Software Engineer II | Core Systems & Algorithmic Applications
+Email: maya.patel@example.com | GitHub: github.com/mayapatel-swe | LeetCode: leetcode.com/mayapatel
+
+SUMMARY:
+Software Engineer with a Bachelor of Science in Computer Science and 1.5 years of experience building high-performance backend microservices and algorithmic data processing tools in C++, Go, and Python. Strong theoretical grounding in Data Structures, Big-O space/time complexity analysis, and rigorous unit testing (92% test coverage).
+
+PROFESSIONAL EXPERIENCE:
+Software Engineer | NexaTech Systems (2024 - Present)
+- Accomplished a 38% decrease in graph traversal response latency as measured by p95 benchmark tests (from 145ms to 90ms), by implementing an optimized bidirectional Breadth-First Search (BFS) algorithm in C++ with custom adjacency list caching.
+- Decreased memory consumption by 45MB per active worker pod as measured by Prometheus memory telemetry, by refactoring JSON serialization to binary Protocol Buffers (Protobuf) and eliminating heap allocations.
+- Increased test coverage from 68% to 92% across core billing APIs as measured by SonarQube quality gates, by authoring 60+ parameterized unit tests and mock integration suites using GoogleTest and pytest.
+- Reduced automated CI build failures by 28% as measured by GitHub Actions pipeline telemetry, by authoring pre-commit linting hooks, AddressSanitizer (ASan) memory checks, and automated code review guidelines.
+
+Software Engineering Intern | Vertex Cloud Labs (Summer 2023)
+- Accomplished a 3.2x speedup in indexing 2.5M catalog items as measured by benchmark completion time (from 42s down to 13s), by implementing a multithreaded worker pool in Go utilizing sync.WaitGroup and bounded channels.
+- Resolved 14 critical edge-case race conditions as measured by zero thread-sanitizer data race alerts, by introducing read-write mutex locks and immutable data models.
+
+TECHNICAL SKILLS & COMPETITIVE PROGRAMMING:
+- Programming Languages: C++, Go (Golang), Python, Java, SQL
+- Core Fundamentals: Algorithms, Data Structures, Big-O Analysis, Memory Management, Concurrency, Multithreading
+- Tools & Frameworks: Protocol Buffers, gRPC, Docker, Git, GoogleTest, pytest, Linux, CI/CD Pipelines
+- Problem Solving: Knight on LeetCode (Rating 1980+); Solved 500+ algorithmic problems across Dynamic Programming, Graphs, and Trees.`;
+
+  // Google L5 Senior Systems Candidate Sample
   const googleSampleResume = `Alex Chen
 Senior Software Engineer | High-Throughput Cloud Platforms
 Email: alex.chen@example.com | GitHub: github.com/alexchen-dev
@@ -1057,8 +1146,16 @@ TECHNICAL EXPERTISE:
 
   if (btnLoadSample) {
     btnLoadSample.addEventListener("click", () => {
-      resumeInput.value = googleSampleResume;
-      showToast("Loaded Google L5 Senior candidate sample!", "success");
+      const activeCard = document.querySelector(".google-role-card.active");
+      const activeRoleId = activeCard ? activeCard.getAttribute("data-id") : (GOOGLE_JOB_PROFILES[0] ? GOOGLE_JOB_PROFILES[0].id : "");
+
+      if (activeRoleId === "google_swe_l3") {
+        resumeInput.value = googleL3SampleResume;
+        showToast("Loaded Google L3 (SWE II) candidate sample!", "success");
+      } else {
+        resumeInput.value = googleSampleResume;
+        showToast("Loaded Google L5 Senior candidate sample!", "success");
+      }
       runGoogleAudit();
     });
   }
@@ -1069,46 +1166,16 @@ TECHNICAL EXPERTISE:
     });
   }
 
-  // Google XYZ Formula Rewriter Inputs
-  const xInput = document.getElementById("xyz-x-input");
-  const yInput = document.getElementById("xyz-y-input");
-  const zInput = document.getElementById("xyz-z-input");
-  const xyzOutput = document.getElementById("xyz-live-output");
-  const btnCopyXyz = document.getElementById("btn-copy-xyz");
-  const btnAppendXyz = document.getElementById("btn-append-xyz");
-
-  function updateXyzPreview() {
-    if (!xyzOutput) return;
-    const xVal = xInput ? xInput.value.trim() : "";
-    const yVal = yInput ? yInput.value.trim() : "";
-    const zVal = zInput ? zInput.value.trim() : "";
-
-    if (!xVal && !yVal && !zVal) {
-      xyzOutput.innerHTML = `Accomplished <span class="xyz-span-x">[X]</span> as measured by <span class="xyz-span-y">[Y]</span>, by <span class="xyz-span-z">[Z]</span>.`;
-      return;
-    }
-
-    xyzOutput.innerHTML = `Accomplished <span class="xyz-span-x">${xVal || "[X Result]"}</span> as measured by <span class="xyz-span-y">${yVal || "[Y Metric]"}</span>, by <span class="xyz-span-z">${zVal || "[Z Technical Implementation]"}</span>.`;
-  }
-
   [xInput, yInput, zInput].forEach(inp => {
     if (inp) inp.addEventListener("input", updateXyzPreview);
   });
 
-  // Populate sample XYZ inputs initially
-  if (xInput && yInput && zInput) {
-    xInput.value = "accelerated payment transaction throughput to 50k TPS";
-    yInput.value = "a 42% decrease in p99 response times and zero message drops";
-    zInput.value = "architecting an event-driven Go and Kafka ingestion layer with distributed Redis caching";
-    updateXyzPreview();
-  }
-
   if (btnCopyXyz) {
     btnCopyXyz.addEventListener("click", () => {
       const text = buildGoogleXyzBullet({
-        accomplishedX: xInput.value,
-        measuredY: yInput.value,
-        doingZ: zInput.value
+        accomplishedX: xInput ? xInput.value : "",
+        measuredY: yInput ? yInput.value : "",
+        doingZ: zInput ? zInput.value : ""
       });
       if (!text) {
         showToast("Fill in XYZ fields first", "warning");
@@ -1122,9 +1189,9 @@ TECHNICAL EXPERTISE:
   if (btnAppendXyz) {
     btnAppendXyz.addEventListener("click", () => {
       const text = buildGoogleXyzBullet({
-        accomplishedX: xInput.value,
-        measuredY: yInput.value,
-        doingZ: zInput.value
+        accomplishedX: xInput ? xInput.value : "",
+        measuredY: yInput ? yInput.value : "",
+        doingZ: zInput ? zInput.value : ""
       });
       if (!text) {
         showToast("Fill in XYZ fields first", "warning");
@@ -1182,9 +1249,20 @@ function runGoogleAudit() {
   document.getElementById("bar-dim-lead").style.width = `${audit.dimensions.leadership}%`;
 
   // Update Level Recommendations
+  const isL3Target = (jdText || "").includes("L3") || (jdText || "").includes("Software Engineer II");
   document.getElementById("google-level-title").textContent = audit.levelEval.title;
-  document.getElementById("google-level-badge-pill").textContent = audit.levelEval.level >= "L5" ? "Senior Bar Met" : "Development Needed";
-  document.getElementById("google-level-badge-pill").className = `badge ${audit.levelEval.badgeClass}`;
+  const levelPill = document.getElementById("google-level-badge-pill");
+
+  if (isL3Target) {
+    const meetsL3 = audit.googleAtsScore >= 65;
+    levelPill.textContent = meetsL3 ? "L3 Bar Met" : "Development Needed";
+    levelPill.className = `badge ${meetsL3 ? "badge-success" : "badge-warning"}`;
+  } else {
+    const meetsSenior = (audit.levelEval.level === "L5" || audit.levelEval.level === "L6") && audit.googleAtsScore >= 70;
+    levelPill.textContent = meetsSenior ? "Senior Bar Met" : "Development Needed";
+    levelPill.className = `badge ${meetsSenior ? "badge-success" : "badge-warning"}`;
+  }
+
   document.getElementById("google-level-summary").textContent = audit.levelEval.summary;
 
   const recsList = document.getElementById("google-level-recs");
