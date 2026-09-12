@@ -37,8 +37,14 @@
         </div>
       </div>
       <div class="header-actions">
+        <button id="btn-toggle-audio" class="btn btn-secondary btn-sm" title="Toggle Sound Feedback (Web Audio)">
+          <span id="audio-toggle-icon">🔊</span> <span id="audio-toggle-label">Sound On</span>
+        </button>
+        <button id="btn-open-shortcuts" class="btn btn-secondary btn-sm" title="Keyboard Shortcuts (?)">
+          <span>⌨️</span> <kbd class="cmd-kbd">?</kbd>
+        </button>
         <button id="btn-cmd-palette-trigger" class="btn btn-secondary btn-sm" title="Open Quick Command Switcher (Cmd+K / Ctrl+K)">
-          <span>⌨️</span> <kbd class="cmd-kbd" style="margin-right:0.25rem;">⌘K</kbd> Palette
+          <span>⚡</span> <kbd class="cmd-kbd" style="margin-right:0.25rem;">⌘K</kbd> Palette
         </button>
         <button id="btn-export-ats-pdf" class="btn btn-secondary btn-sm" title="Print or Save Single-Column ATS Resume to PDF">
           <span>🖨️</span> Export ATS PDF
@@ -119,10 +125,11 @@
             <input type="file" id="ats-file-input" accept=".pdf,.docx,.txt,.md,text/plain" style="display:none;">
           </div>
 
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; flex-wrap:wrap; gap:0.5rem;">
             <div class="resume-view-toggles">
               <button type="button" class="btn-view-toggle active" id="btn-view-editor">Raw Text</button>
               <button type="button" class="btn-view-toggle" id="btn-view-heatmap">Live Keyword Heatmap</button>
+              <button type="button" class="btn-view-toggle" id="btn-toggle-zen" title="Distraction-Free Focus Writing Mode (Esc to exit)">🧘 Zen Mode</button>
             </div>
             <span id="heatmap-status-badge" style="font-size:0.72rem; color:var(--text-muted);">Real-time parsing active</span>
           </div>
@@ -303,7 +310,12 @@
       <div id="google-results-card" class="glass-card ats-results-card">
         <div class="card-header">
           <h3 class="card-title"><span>📊</span> Google ATS Score & Level Competency Assessment</h3>
-          <span id="google-level-badge" class="badge badge-success">Evaluating...</span>
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <button type="button" id="btn-export-google-md" class="btn btn-secondary btn-sm" title="Download Markdown Audit Report">
+              📥 Export Audit (.md)
+            </button>
+            <span id="google-level-badge" class="badge badge-success">Evaluating...</span>
+          </div>
         </div>
 
         <div class="ats-dashboard-layout">
@@ -503,7 +515,12 @@
       <div id="amazon-results-card" class="glass-card ats-results-card">
         <div class="card-header">
           <h3 class="card-title"><span>📊</span> Amazon Bar Raiser Score & LP Coverage Audit</h3>
-          <span id="amazon-tier-badge" class="badge badge-success">Evaluating...</span>
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <button type="button" id="btn-export-amazon-md" class="btn btn-secondary btn-sm" title="Download Markdown Audit Report">
+              📥 Export Audit (.md)
+            </button>
+            <span id="amazon-tier-badge" class="badge badge-success">Evaluating...</span>
+          </div>
         </div>
 
         <div class="ats-dashboard-layout">
@@ -1306,6 +1323,112 @@
       </div>
 
       <div id="outreach-templates-list" class="outreach-cards-container"></div>
+    </div>
+  </div>
+
+  <!-- STICKY FLOATING MATCH HUD (Appears when scorecard scrolls out of view) -->
+  <div id="floating-match-hud" class="floating-match-hud">
+    <div class="hud-score-circle" id="hud-score-circle">
+      <span id="hud-score-number">0</span>%
+    </div>
+    <div class="hud-info">
+      <div class="hud-title">ATS Match</div>
+      <span id="hud-tier-badge" class="badge badge-success" style="font-size:0.65rem; padding:0.15rem 0.4rem;">Evaluating</span>
+    </div>
+    <div class="hud-actions">
+      <button id="hud-btn-diff" class="hud-action-btn" title="Open Smart Auto-Tuner Diff">⚡ Diff</button>
+      <button id="hud-btn-outreach" class="hud-action-btn" title="Open Outreach Pitch Kit">✉️ Outreach</button>
+      <button id="hud-btn-print" class="hud-action-btn" title="Export ATS PDF">🖨️ PDF</button>
+      <button id="hud-btn-scrollup" class="hud-action-btn hud-btn-icon" title="Scroll to Full Scorecard">↑ Top</button>
+    </div>
+  </div>
+
+  <!-- KEYBOARD SHORTCUTS MODAL -->
+  <div id="shortcuts-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width:560px;">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title"><span>⌨️</span> Keyboard Shortcuts</h3>
+          <p class="card-subtitle">Linear-grade power shortcuts for lightning fast navigation.</p>
+        </div>
+        <button id="btn-close-shortcuts-modal" class="card-icon-btn" style="width:30px; height:30px;">✕</button>
+      </div>
+      <div class="shortcuts-table-container">
+        <table class="shortcuts-table">
+          <thead>
+            <tr><th>Action</th><th style="text-align:right;">Shortcut</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Run Analysis (inside any textarea)</td><td style="text-align:right;"><kbd>⌘</kbd> / <kbd>Ctrl</kbd> + <kbd>Enter</kbd></td></tr>
+            <tr><td>Switch to ATS Matcher</td><td style="text-align:right;"><kbd>1</kbd></td></tr>
+            <tr><td>Switch to Google Copilot</td><td style="text-align:right;"><kbd>2</kbd></td></tr>
+            <tr><td>Switch to Amazon Bar Raiser</td><td style="text-align:right;"><kbd>3</kbd></td></tr>
+            <tr><td>Switch to Interview Coach</td><td style="text-align:right;"><kbd>4</kbd></td></tr>
+            <tr><td>Switch to Anti-AI Humanizer</td><td style="text-align:right;"><kbd>5</kbd></td></tr>
+            <tr><td>Switch to LinkedIn Engine</td><td style="text-align:right;"><kbd>6</kbd></td></tr>
+            <tr><td>Switch to Profile Optimizer</td><td style="text-align:right;"><kbd>7</kbd></td></tr>
+            <tr><td>Switch to Application Tracker</td><td style="text-align:right;"><kbd>8</kbd></td></tr>
+            <tr><td>Open Command Switcher</td><td style="text-align:right;"><kbd>⌘</kbd> + <kbd>K</kbd></td></tr>
+            <tr><td>Open Auto-Tune Diff</td><td style="text-align:right;"><kbd>⌘</kbd> + <kbd>D</kbd></td></tr>
+            <tr><td>Open Outreach Pitch Kit</td><td style="text-align:right;"><kbd>⌘</kbd> + <kbd>O</kbd></td></tr>
+            <tr><td>Export ATS PDF</td><td style="text-align:right;"><kbd>⌘</kbd> + <kbd>P</kbd></td></tr>
+            <tr><td>Toggle Zen Focus Mode</td><td style="text-align:right;"><kbd>⌘</kbd> + <kbd>Z</kbd></td></tr>
+            <tr><td>Toggle Audio Sound Feedback</td><td style="text-align:right;"><kbd>⌘</kbd> + <kbd>M</kbd></td></tr>
+            <tr><td>Open Shortcuts Cheat Sheet</td><td style="text-align:right;"><kbd>?</kbd></td></tr>
+            <tr><td>Close Active Modal / Drawer</td><td style="text-align:right;"><kbd>Esc</kbd></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ZEN FOCUS EDITOR MODAL -->
+  <div id="zen-editor-modal" class="modal-overlay">
+    <div class="zen-container">
+      <div class="zen-header">
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+          <span style="font-size:1.3rem;">🧘</span>
+          <div>
+            <strong style="font-size:0.95rem; color:var(--text-primary);">Zen Focus Mode</strong>
+            <span style="font-size:0.75rem; color:var(--text-muted); margin-left:0.5rem;">Distraction-free resume writing</span>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+          <div class="zen-ats-badge" id="zen-ats-badge">
+            <span>ATS Match:</span> <strong id="zen-ats-score">0%</strong>
+          </div>
+          <button id="btn-close-zen" class="btn btn-primary btn-sm">Done Editing (<kbd class="cmd-kbd">Esc</kbd>)</button>
+        </div>
+      </div>
+      <textarea id="zen-resume-textarea" class="zen-textarea" placeholder="Write high-impact, quantified experience bullets without distractions..."></textarea>
+      <div class="zen-footer">
+        <div class="zen-stat" id="zen-word-count">0 words</div>
+        <div class="zen-stat" id="zen-char-count">0 characters</div>
+        <div class="zen-stat" id="zen-line-count">0 lines</div>
+        <div style="margin-left:auto; font-size:0.75rem; color:var(--text-muted);">Auto-syncs with ATS Matcher on exit</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE FIRST-RUN ONBOARDING TOUR -->
+  <div id="onboarding-tour-overlay" class="modal-overlay">
+    <div class="tour-card">
+      <div class="tour-badge" id="tour-step-badge">Step 1 of 3</div>
+      <div class="tour-visual" id="tour-visual">🎯</div>
+      <h3 class="tour-title" id="tour-title">Welcome to ResumeTracker</h3>
+      <p class="tour-desc" id="tour-desc">Optimize your resume against ATS filters, Google XYZ standards, and Amazon's 16 Leadership Principles with 100% offline privacy.</p>
+      <div class="tour-progress-dots">
+        <span class="tour-dot active" data-step="1"></span>
+        <span class="tour-dot" data-step="2"></span>
+        <span class="tour-dot" data-step="3"></span>
+      </div>
+      <div class="tour-actions">
+        <button id="btn-tour-skip" class="btn btn-secondary btn-sm">Skip Tour</button>
+        <div style="display:flex; gap:0.5rem;">
+          <button id="btn-tour-prev" class="btn btn-secondary btn-sm" style="display:none;">Back</button>
+          <button id="btn-tour-next" class="btn btn-primary btn-sm">Next →</button>
+        </div>
+      </div>
     </div>
   </div>
 

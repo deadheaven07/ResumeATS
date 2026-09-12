@@ -179,7 +179,7 @@ export function generateResumeHeatmapHtml(resumeText, matchedSkills = [], banned
   bannedWords.forEach(word => {
     const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const regex = new RegExp(`\\b(${escaped})\\b`, "gi");
-    html = html.replace(regex, `<span class="heatmap-slop" title="AI Buzzword / Corporate Slop: '$1'">$1</span>`);
+    html = html.replace(regex, `<span class="heatmap-slop" data-slop="$1" title="AI Buzzword / Corporate Slop: '$1' (Click for 1-click smart replacement)">$1</span>`);
   });
 
   return html;

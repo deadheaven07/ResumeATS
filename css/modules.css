@@ -1513,4 +1513,360 @@
   color: var(--text-heading);
 }
 
+/* ==========================================================================
+   STICKY FLOATING MATCH HUD
+   ========================================================================== */
+.floating-match-hud {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.85rem;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-full);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.16);
+  opacity: 0;
+  transform: translateY(80px) scale(0.96);
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] .floating-match-hud {
+  background: rgba(24, 28, 38, 0.94);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.floating-match-hud.active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.hud-score-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+  flex-shrink: 0;
+}
+
+.hud-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.hud-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  line-height: 1;
+}
+
+.hud-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.hud-action-btn {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-full);
+  padding: 0.25rem 0.65rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.hud-action-btn:hover {
+  background: var(--accent-primary);
+  color: #ffffff;
+  border-color: var(--accent-primary);
+  transform: translateY(-1px);
+}
+
+.hud-btn-icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ==========================================================================
+   INLINE SLOP SMART-FIX POPOVER
+   ========================================================================== */
+.slop-fix-popover {
+  position: absolute;
+  z-index: 250;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.85rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  width: 260px;
+  animation: popoverFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popoverFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.slop-fix-header {
+  font-weight: 700;
+  color: var(--badge-danger-text, #e11d48);
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.slop-fix-close {
+  cursor: pointer;
+  opacity: 0.6;
+  font-size: 0.85rem;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+}
+.slop-fix-close:hover { opacity: 1; }
+
+.slop-fix-replace-btn {
+  background: rgba(5, 150, 105, 0.12);
+  color: #059669;
+  border: 1px solid rgba(5, 150, 105, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.slop-fix-replace-btn:hover {
+  background: #059669;
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   KEYBOARD SHORTCUTS MODAL
+   ========================================================================== */
+.shortcuts-table-container {
+  max-height: 480px;
+  overflow-y: auto;
+  margin-top: 0.75rem;
+}
+
+.shortcuts-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.shortcuts-table th {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-card);
+}
+
+.shortcuts-table td {
+  padding: 0.65rem 0.75rem;
+  font-size: 0.82rem;
+  color: var(--text-body);
+  border-bottom: 1px solid var(--border-card);
+}
+
+.shortcuts-table tr:hover td {
+  background: var(--bg-elevated);
+}
+
+kbd {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text-heading);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-card);
+  border-radius: 4px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================================================
+   ZEN FOCUS MODE MODAL
+   ========================================================================== */
+#zen-editor-modal.active {
+  display: flex !important;
+  background: var(--bg-primary);
+}
+
+.zen-container {
+  width: 100%;
+  max-width: 900px;
+  height: 94vh;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  padding: 1.25rem 2rem;
+}
+
+.zen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-card);
+}
+
+.zen-ats-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-full);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.zen-ats-badge strong {
+  color: var(--accent-primary);
+}
+
+.zen-textarea {
+  flex: 1;
+  width: 100%;
+  margin-top: 1rem;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--text-heading);
+  padding: 0.5rem 0;
+}
+
+.zen-footer {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-card);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   INTERACTIVE ONBOARDING TOUR
+   ========================================================================== */
+.tour-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  padding: 2.25rem;
+  max-width: 480px;
+  width: 90%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: popoverFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tour-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--accent-primary);
+  background: rgba(99, 102, 241, 0.1);
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+  margin-bottom: 0.75rem;
+}
+
+.tour-visual {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+}
+
+.tour-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-heading);
+  margin-bottom: 0.5rem;
+}
+
+.tour-desc {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.tour-progress-dots {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.tour-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-card);
+  transition: all 0.2s ease;
+}
+
+.tour-dot.active {
+  width: 24px;
+  border-radius: 4px;
+  background: var(--accent-primary);
+}
+
+.tour-actions {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+
 

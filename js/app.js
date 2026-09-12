@@ -17,6 +17,8 @@ import { generateInterviewQuestions } from "./interview-coach.js";
 import { setupCommandPalette } from "./command-palette.js";
 import { generateAutoTuneDiffs, applyApprovedDiffs } from "./diff-engine.js";
 import { generateOutreachKit, OUTREACH_TONES } from "./outreach-engine.js";
+import { isAudioEnabled, toggleAudio, playTick, playPop, playChime } from "./audio-engine.js";
+import { downloadMarkdownFile, generateGoogleAuditMarkdown, generateAmazonAuditMarkdown } from "./report-exporter.js";
 
 // Initialize Subsystems
 const jobTracker = new JobTracker();
@@ -86,6 +88,8 @@ const state = {
   currentTab: "ats-matcher",
   selectedHookFormula: "false_binary",
   activeAtsAnalysis: null,
+  activeGoogleAudit: null,
+  activeAmazonAudit: null,
   profileChecklistState: {}
 };
 
@@ -152,6 +156,7 @@ Our key takeaways underscore that synergy and navigating complexity are paramoun
    ========================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
+  initAudio();
   initTabs();
   initAtsMatcher();
   initGoogleCopilot();
@@ -166,6 +171,12 @@ document.addEventListener("DOMContentLoaded", () => {
   initSideDrawer();
   initAutoTunerModal();
   initOutreachModal();
+  initKeyboardShortcuts();
+  initFloatingMatchHud();
+  initHeatmapSmartFix();
+  initZenMode();
+  initMarkdownExporters();
+  initOnboardingTour();
 });
 
 function initTheme() {
@@ -220,6 +231,7 @@ function initTabs() {
 export function switchTab(tabId) {
   state.currentTab = tabId;
   window.location.hash = tabId;
+  playTick();
 
   document.querySelectorAll(".nav-tab-btn").forEach(btn => {
     btn.classList.toggle("active", btn.getAttribute("data-tab") === tabId);
@@ -450,6 +462,22 @@ function runAtsAnalysis() {
   if (resumeHeatmap && resumeHeatmap.style.display !== "none") {
     const banned = BANNED_PATTERNS.map(b => b.pattern);
     resumeHeatmap.innerHTML = generateResumeHeatmapHtml(resumeText, analysis.matchedSkills, banned);
+  }
+
+  // Update Sticky Floating Match HUD
+  const hudScoreNumber = document.getElementById("hud-score-number");
+  const hudTierBadge = document.getElementById("hud-tier-badge");
+  if (hudScoreNumber) hudScoreNumber.textContent = analysis.score;
+  if (hudTierBadge) {
+    hudTierBadge.textContent = analysis.statusTier;
+    hudTierBadge.className = `badge ${analysis.score >= 80 ? "badge-success" : analysis.score >= 60 ? "badge-warning" : "badge-danger"}`;
+  }
+
+  // Audio cue
+  if (analysis.score >= 80) {
+    playChime();
+  } else {
+    playPop();
   }
 
   showToast(`Analysis Complete: ${analysis.score}% ATS Match`, analysis.score >= 70 ? "success" : "info");
@@ -1454,6 +1482,9 @@ function runGoogleAudit() {
     recsList.appendChild(li);
   });
 
+  state.activeGoogleAudit = audit;
+  if (audit.googleAtsScore >= 80) playChime(); else playPop();
+
   showToast(`Google Audit Complete: ${audit.googleAtsScore}% (${audit.levelEval.level} Scope)`, "success");
 }
 
@@ -1670,6 +1701,9 @@ function runAmazonAudit() {
   setDim("score-amazon-scale", "bar-amazon-scale", audit.dimensions.scale);
   setDim("score-amazon-opex", "bar-amazon-opex", audit.dimensions.operationalExcellence);
   setDim("score-amazon-cust", "bar-amazon-cust", audit.dimensions.customerObsession);
+
+  state.activeAmazonAudit = audit;
+  if (audit.amazonScore >= 80) playChime(); else playPop();
 
   // Render 16 LP Chips
   const container = document.getElementById("amazon-lp-chips-container");
@@ -2321,5 +2355,471 @@ function initOutreachModal() {
       renderTemplates();
     });
   });
+}
+
+/* ==========================================================================
+   MODULE: SYNTHESIZED AUDIO CONTROLLER
+   ========================================================================== */
+function initAudio() {
+  const toggleBtn = document.getElementById("btn-toggle-audio");
+  const icon = document.getElementById("audio-toggle-icon");
+  const label = document.getElementById("audio-toggle-label");
+
+  function updateAudioUi(enabled) {
+    if (icon) icon.textContent = enabled ? "🔊" : "🔇";
+    if (label) label.textContent = enabled ? "Sound On" : "Sound Muted";
+  }
+
+  updateAudioUi(isAudioEnabled());
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", () => {
+      const enabled = toggleAudio();
+      updateAudioUi(enabled);
+      showToast(enabled ? "Audio feedback enabled" : "Audio feedback muted", "info");
+    });
+  }
+}
+
+/* ==========================================================================
+   MODULE: LINEAR-GRADE KEYBOARD SHORTCUTS
+   ========================================================================== */
+function initKeyboardShortcuts() {
+  const shortcutsModal = document.getElementById("shortcuts-modal");
+  const btnOpen = document.getElementById("btn-open-shortcuts");
+  const btnClose = document.getElementById("btn-close-shortcuts-modal");
+
+  function openShortcuts() {
+    playTick();
+    if (shortcutsModal) shortcutsModal.classList.add("active");
+  }
+
+  function closeShortcuts() {
+    if (shortcutsModal) shortcutsModal.classList.remove("active");
+  }
+
+  if (btnOpen) btnOpen.addEventListener("click", openShortcuts);
+  if (btnClose) btnClose.addEventListener("click", closeShortcuts);
+  if (shortcutsModal) {
+    shortcutsModal.addEventListener("click", (e) => {
+      if (e.target === shortcutsModal) closeShortcuts();
+    });
+  }
+
+  document.addEventListener("keydown", (e) => {
+    const activeEl = document.activeElement;
+    const isTyping = activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.isContentEditable);
+
+    // 1. Cmd+Enter / Ctrl+Enter: Run Analysis from within any textarea
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      playPop();
+      if (state.currentTab === "ats-matcher") {
+        runAtsAnalysis();
+      } else if (state.currentTab === "google-copilot") {
+        runGoogleAudit();
+      } else if (state.currentTab === "amazon-copilot") {
+        runAmazonAudit();
+      } else if (state.currentTab === "humanizer") {
+        runHumanizerAudit();
+      } else if (state.currentTab === "linkedin-engine") {
+        document.getElementById("li-story-input")?.dispatchEvent(new Event("input"));
+      } else if (state.currentTab === "profile-optimizer") {
+        document.getElementById("profile-role-input")?.dispatchEvent(new Event("input"));
+      }
+      return;
+    }
+
+    // 2. Escape: Close any open modal or drawer
+    if (e.key === "Escape") {
+      const openModals = document.querySelectorAll(".modal-overlay.active, .drawer-overlay.active");
+      if (openModals.length > 0) {
+        openModals.forEach(m => m.classList.remove("active"));
+        playTick();
+        return;
+      }
+    }
+
+    // If typing inside an input/textarea, do NOT trigger navigation shortcuts
+    if (isTyping) return;
+
+    // 3. Number Keys 1-8: Instant Module Switcher
+    const tabMap = {
+      "1": "ats-matcher",
+      "2": "google-copilot",
+      "3": "amazon-copilot",
+      "4": "interview-coach",
+      "5": "humanizer",
+      "6": "linkedin-engine",
+      "7": "profile-optimizer",
+      "8": "tracker"
+    };
+    if (tabMap[e.key]) {
+      e.preventDefault();
+      switchTab(tabMap[e.key]);
+      return;
+    }
+
+    // 4. '?' opens keyboard shortcuts HUD
+    if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+      e.preventDefault();
+      openShortcuts();
+      return;
+    }
+
+    // 5. Cmd/Ctrl + D: Auto-Tune Diff
+    if ((e.metaKey || e.ctrlKey) && (e.key === "d" || e.key === "D")) {
+      e.preventDefault();
+      const diffTrigger = document.getElementById("btn-open-autotune-diff");
+      if (diffTrigger) diffTrigger.click();
+      return;
+    }
+
+    // 6. Cmd/Ctrl + O: Outreach Kit
+    if ((e.metaKey || e.ctrlKey) && (e.key === "o" || e.key === "O")) {
+      e.preventDefault();
+      const outreachTrigger = document.getElementById("btn-open-outreach-kit");
+      if (outreachTrigger) outreachTrigger.click();
+      return;
+    }
+
+    // 7. Cmd/Ctrl + P: ATS Print PDF
+    if ((e.metaKey || e.ctrlKey) && (e.key === "p" || e.key === "P")) {
+      e.preventDefault();
+      const printTrigger = document.getElementById("btn-export-ats-pdf");
+      if (printTrigger) printTrigger.click();
+      return;
+    }
+
+    // 8. Cmd/Ctrl + Z: Toggle Zen Focus Mode
+    if ((e.metaKey || e.ctrlKey) && (e.key === "z" || e.key === "Z") && !e.shiftKey) {
+      e.preventDefault();
+      const zenTrigger = document.getElementById("btn-toggle-zen");
+      if (zenTrigger) zenTrigger.click();
+      return;
+    }
+
+    // 9. Cmd/Ctrl + M: Toggle Sound Feedback
+    if ((e.metaKey || e.ctrlKey) && (e.key === "m" || e.key === "M")) {
+      e.preventDefault();
+      const audioTrigger = document.getElementById("btn-toggle-audio");
+      if (audioTrigger) audioTrigger.click();
+      return;
+    }
+  });
+}
+
+/* ==========================================================================
+   MODULE: STICKY FLOATING MATCH HUD
+   ========================================================================== */
+function initFloatingMatchHud() {
+  const hud = document.getElementById("floating-match-hud");
+  const scorecard = document.getElementById("ats-results-card");
+  const hudBtnDiff = document.getElementById("hud-btn-diff");
+  const hudBtnOutreach = document.getElementById("hud-btn-outreach");
+  const hudBtnPrint = document.getElementById("hud-btn-print");
+  const hudBtnScrollup = document.getElementById("hud-btn-scrollup");
+
+  if (!hud) return;
+
+  window.addEventListener("scroll", () => {
+    if (state.currentTab !== "ats-matcher" || !scorecard || !scorecard.classList.contains("active")) {
+      hud.classList.remove("active");
+      return;
+    }
+
+    const rect = scorecard.getBoundingClientRect();
+    if (rect.bottom < 80) {
+      hud.classList.add("active");
+    } else {
+      hud.classList.remove("active");
+    }
+  }, { passive: true });
+
+  if (hudBtnDiff) hudBtnDiff.addEventListener("click", () => {
+    playTick();
+    document.getElementById("btn-open-autotune-diff")?.click();
+  });
+  if (hudBtnOutreach) hudBtnOutreach.addEventListener("click", () => {
+    playTick();
+    document.getElementById("btn-open-outreach-kit")?.click();
+  });
+  if (hudBtnPrint) hudBtnPrint.addEventListener("click", () => {
+    playTick();
+    document.getElementById("btn-export-ats-pdf")?.click();
+  });
+  if (hudBtnScrollup) hudBtnScrollup.addEventListener("click", () => {
+    playTick();
+    scorecard?.scrollIntoView({ behavior: "smooth" });
+  });
+}
+
+/* ==========================================================================
+   MODULE: INLINE SLOP SMART-FIX POPOVER
+   ========================================================================== */
+function initHeatmapSmartFix() {
+  const heatmap = document.getElementById("ats-resume-heatmap");
+  const resumeInput = document.getElementById("ats-resume-input");
+  let activePopover = null;
+
+  function closeActivePopover() {
+    if (activePopover) {
+      activePopover.remove();
+      activePopover = null;
+    }
+  }
+
+  document.addEventListener("click", (e) => {
+    if (activePopover && !activePopover.contains(e.target) && !e.target.classList.contains("heatmap-slop")) {
+      closeActivePopover();
+    }
+  });
+
+  if (!heatmap) return;
+
+  heatmap.addEventListener("click", (e) => {
+    const slopSpan = e.target.closest(".heatmap-slop");
+    if (!slopSpan) return;
+
+    closeActivePopover();
+
+    const rawWord = slopSpan.getAttribute("data-slop") || slopSpan.textContent.trim();
+    const cleanWord = rawWord.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "");
+
+    const matchedPattern = BANNED_PATTERNS.find(b => b.term.toLowerCase() === cleanWord);
+    const replacement = matchedPattern ? matchedPattern.replacement.split("/")[0].trim() : "improved phrasing";
+
+    const rect = slopSpan.getBoundingClientRect();
+    const popover = document.createElement("div");
+    popover.className = "slop-fix-popover";
+    popover.style.top = `${rect.bottom + window.scrollY + 6}px`;
+    popover.style.left = `${Math.max(16, rect.left + window.scrollX - 20)}px`;
+
+    popover.innerHTML = `
+      <div class="slop-fix-header">
+        <span>⚠️ AI Cliché: "${rawWord}"</span>
+        <button type="button" class="slop-fix-close">✕</button>
+      </div>
+      <div style="font-size:0.72rem; color:var(--text-muted);">Recommended human replacement:</div>
+      <button type="button" class="slop-fix-replace-btn">
+        ✓ Replace with "<strong>${replacement}</strong>"
+      </button>
+    `;
+
+    popover.querySelector(".slop-fix-close").addEventListener("click", () => {
+      closeActivePopover();
+    });
+
+    popover.querySelector(".slop-fix-replace-btn").addEventListener("click", () => {
+      const currentResume = resumeInput.value;
+      const regex = new RegExp(`\\b${rawWord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+      resumeInput.value = currentResume.replace(regex, replacement);
+      playPop();
+      showToast(`Replaced "${rawWord}" with "${replacement}"!`, "success");
+      closeActivePopover();
+      runAtsAnalysis();
+    });
+
+    document.body.appendChild(popover);
+    activePopover = popover;
+  });
+}
+
+/* ==========================================================================
+   MODULE: ZEN FOCUS WRITING MODE
+   ========================================================================== */
+function initZenMode() {
+  const modal = document.getElementById("zen-editor-modal");
+  const btnToggle = document.getElementById("btn-toggle-zen");
+  const btnClose = document.getElementById("btn-close-zen");
+  const zenTextarea = document.getElementById("zen-resume-textarea");
+  const resumeInput = document.getElementById("ats-resume-input");
+
+  const wordEl = document.getElementById("zen-word-count");
+  const charEl = document.getElementById("zen-char-count");
+  const lineEl = document.getElementById("zen-line-count");
+  const scoreEl = document.getElementById("zen-ats-score");
+
+  function updateZenStats(text) {
+    const chars = text.length;
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    const lines = text ? text.split("\n").length : 0;
+
+    if (wordEl) wordEl.textContent = `${words} words`;
+    if (charEl) charEl.textContent = `${chars} characters`;
+    if (lineEl) lineEl.textContent = `${lines} lines`;
+    if (scoreEl) scoreEl.textContent = `${state.activeAtsAnalysis ? state.activeAtsAnalysis.score : 0}%`;
+  }
+
+  function openZen() {
+    playTick();
+    zenTextarea.value = resumeInput.value;
+    updateZenStats(zenTextarea.value);
+    modal.classList.add("active");
+    setTimeout(() => zenTextarea.focus(), 80);
+  }
+
+  function closeZen() {
+    playPop();
+    resumeInput.value = zenTextarea.value;
+    modal.classList.remove("active");
+    runAtsAnalysis();
+  }
+
+  if (btnToggle) btnToggle.addEventListener("click", openZen);
+  if (btnClose) btnClose.addEventListener("click", closeZen);
+
+  if (zenTextarea) {
+    zenTextarea.addEventListener("input", () => {
+      updateZenStats(zenTextarea.value);
+    });
+  }
+}
+
+/* ==========================================================================
+   MODULE: MARKDOWN AUDIT REPORT EXPORTERS
+   ========================================================================== */
+function initMarkdownExporters() {
+  const btnExportGoogle = document.getElementById("btn-export-google-md");
+  const btnExportAmazon = document.getElementById("btn-export-amazon-md");
+
+  if (btnExportGoogle) {
+    btnExportGoogle.addEventListener("click", () => {
+      playPop();
+      if (!state.activeGoogleAudit) {
+        runGoogleAudit();
+      }
+      if (!state.activeGoogleAudit) return;
+
+      const resumeText = document.getElementById("google-resume-input")?.value || "";
+      const firstLine = resumeText.split("\n")[0]?.trim() || "Candidate";
+      const candidateName = firstLine.length < 35 && !firstLine.includes(":") ? firstLine : "Candidate";
+
+      const jdText = document.getElementById("google-jd-input")?.value || "";
+      const roleMatch = jdText.match(/(?:Role|Title|Position):\s*([^\n]+)/i);
+      const targetRole = roleMatch ? roleMatch[1].trim() : "Google Senior Software Engineer (L5)";
+
+      const md = generateGoogleAuditMarkdown(state.activeGoogleAudit, candidateName, targetRole);
+      downloadMarkdownFile(`Google_ATS_Audit_${candidateName.replace(/\s+/g, "_")}.md`, md);
+      showToast("Downloaded Google ATS Audit Report (.md)", "success");
+    });
+  }
+
+  if (btnExportAmazon) {
+    btnExportAmazon.addEventListener("click", () => {
+      playPop();
+      if (!state.activeAmazonAudit) {
+        runAmazonAudit();
+      }
+      if (!state.activeAmazonAudit) return;
+
+      const resumeText = document.getElementById("amazon-resume-input")?.value || "";
+      const firstLine = resumeText.split("\n")[0]?.trim() || "Candidate";
+      const candidateName = firstLine.length < 35 && !firstLine.includes(":") ? firstLine : "Candidate";
+
+      const jdText = document.getElementById("amazon-jd-input")?.value || "";
+      const roleMatch = jdText.match(/(?:Role|Title|Position):\s*([^\n]+)/i);
+      const targetRole = roleMatch ? roleMatch[1].trim() : "Amazon SDE II (L5)";
+
+      const md = generateAmazonAuditMarkdown(state.activeAmazonAudit, candidateName, targetRole);
+      downloadMarkdownFile(`Amazon_Bar_Raiser_Audit_${candidateName.replace(/\s+/g, "_")}.md`, md);
+      showToast("Downloaded Amazon Bar Raiser Audit Report (.md)", "success");
+    });
+  }
+}
+
+/* ==========================================================================
+   MODULE: INTERACTIVE FIRST-RUN ONBOARDING TOUR
+   ========================================================================== */
+function initOnboardingTour() {
+  const overlay = document.getElementById("onboarding-tour-overlay");
+  const badge = document.getElementById("tour-step-badge");
+  const visual = document.getElementById("tour-visual");
+  const title = document.getElementById("tour-title");
+  const desc = document.getElementById("tour-desc");
+  const btnPrev = document.getElementById("btn-tour-prev");
+  const btnNext = document.getElementById("btn-tour-next");
+  const btnSkip = document.getElementById("btn-tour-skip");
+  const dots = document.querySelectorAll(".tour-dot");
+
+  if (!overlay) return;
+
+  const steps = [
+    {
+      step: 1,
+      visual: "🎯",
+      title: "Welcome to ResumeTracker",
+      desc: "Optimize your resume against ATS filters, Google XYZ standards, and Amazon's 16 Leadership Principles with 100% offline privacy."
+    },
+    {
+      step: 2,
+      visual: "⚡",
+      title: "Live Heatmaps & Auto-Tuning",
+      desc: "Identify missing canonical keywords, inspect flagged AI buzzwords, and weave missing skills into your experience using side-by-side diffs."
+    },
+    {
+      step: 3,
+      visual: "✉️",
+      title: "Big Tech & Recruiter Kits",
+      desc: "Access Google L3-L6 leveling rubrics, Amazon 16 LP audits, tailored AI interview questions, and 75-word recruiter cold emails."
+    }
+  ];
+
+  let currentStep = 0;
+
+  function renderStep(idx) {
+    const s = steps[idx];
+    if (badge) badge.textContent = `Step ${s.step} of 3`;
+    if (visual) visual.textContent = s.visual;
+    if (title) title.textContent = s.title;
+    if (desc) desc.textContent = s.desc;
+
+    dots.forEach((d, i) => d.classList.toggle("active", i === idx));
+    if (btnPrev) btnPrev.style.display = idx === 0 ? "none" : "inline-flex";
+    if (btnNext) btnNext.textContent = idx === steps.length - 1 ? "Get Started 🚀" : "Next →";
+  }
+
+  function closeTour() {
+    overlay.classList.remove("active");
+    localStorage.setItem("resumetracker_tour_completed", "true");
+    playPop();
+  }
+
+  if (!localStorage.getItem("resumetracker_tour_completed")) {
+    setTimeout(() => {
+      overlay.classList.add("active");
+      renderStep(0);
+    }, 450);
+  }
+
+  if (btnNext) {
+    btnNext.addEventListener("click", () => {
+      playTick();
+      if (currentStep < steps.length - 1) {
+        currentStep++;
+        renderStep(currentStep);
+      } else {
+        closeTour();
+      }
+    });
+  }
+
+  if (btnPrev) {
+    btnPrev.addEventListener("click", () => {
+      playTick();
+      if (currentStep > 0) {
+        currentStep--;
+        renderStep(currentStep);
+      }
+    });
+  }
+
+  if (btnSkip) btnSkip.addEventListener("click", closeTour);
+
+  if (overlay) {
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closeTour();
+    });
+  }
 }
 
