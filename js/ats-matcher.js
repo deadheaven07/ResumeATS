@@ -154,3 +154,101 @@ export function generateStarDraftsForSkill(skillName) {
     })
   }));
 }
+
+/**
+ * Generates rich HTML with color-coded heatmap highlights for matched skills & AI slop.
+ */
+export function generateResumeHeatmapHtml(resumeText, matchedSkills = [], bannedWords = []) {
+  if (!resumeText) return "<em>Paste or upload a resume to view the live heatmap...</em>";
+
+  // Escape basic HTML
+  let html = resumeText
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  // Highlight matched canonical skills (Emerald)
+  matchedSkills.forEach(s => {
+    const rawPattern = s.rawMatch || s.canonical;
+    const escaped = rawPattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`\\b(${escaped})\\b`, "gi");
+    html = html.replace(regex, `<span class="heatmap-match" title="Verified Skill: ${s.canonical}">$1</span>`);
+  });
+
+  // Highlight AI slop words (Rose line-through)
+  bannedWords.forEach(word => {
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`\\b(${escaped})\\b`, "gi");
+    html = html.replace(regex, `<span class="heatmap-slop" title="AI Buzzword / Corporate Slop: '$1'">$1</span>`);
+  });
+
+  return html;
+}
+
+/**
+ * Formats raw resume text into ATS-Compliant Single-Column Printable Layout
+ */
+export function generateAtsPrintHtml(resumeText) {
+  if (!resumeText || !resumeText.trim()) return "<p>No resume content provided.</p>";
+
+  const lines = resumeText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+  const name = lines[0] || "Candidate Name";
+  const contact = lines.length > 1 && (lines[1].includes("@") || lines[1].includes("Email") || lines[1].includes("|"))
+    ? lines[1]
+    : "Email: candidate@example.com | Phone: (555) 019-2834 | LinkedIn: linkedin.com/in/candidate";
+
+  const remainingLines = lines.slice(contact === lines[1] ? 2 : 1);
+
+  let bodyHtml = "";
+  let inBulletList = false;
+
+  remainingLines.forEach(line => {
+    const isSectionHeader = /^(summary|professional experience|experience|technical skills|skills|education|projects|certifications):?$/i.test(line)
+      || (/^[A-Z\s]{4,25}:?$/.test(line) && !line.includes("@") && !line.startsWith("-"));
+
+    const isBullet = line.startsWith("-") || line.startsWith("•") || line.startsWith("*");
+
+    if (isSectionHeader) {
+      if (inBulletList) {
+        bodyHtml += "</ul>";
+        inBulletList = false;
+      }
+      bodyHtml += `
+        <div class="ats-print-section">
+          <div class="ats-print-section-title">${line.replace(/:$/, "")}</div>
+      `;
+    } else if (isBullet) {
+      if (!inBulletList) {
+        bodyHtml += `<ul class="ats-print-bullets">`;
+        inBulletList = true;
+      }
+      const bulletText = line.replace(/^[-•*]\s*/, "");
+      bodyHtml += `<li>${bulletText}</li>`;
+    } else {
+      if (inBulletList) {
+        bodyHtml += "</ul>";
+        inBulletList = false;
+      }
+      // Check if line looks like a job title / company / dates
+      if (line.includes("|") || line.includes(" - ") || /\b(20\d\d|19\d\d|Present)\b/i.test(line)) {
+        bodyHtml += `<div class="ats-print-job"><div class="ats-print-job-header"><span>${line}</span></div></div>`;
+      } else {
+        bodyHtml += `<p style="margin-bottom:0.4rem; font-size:10pt;">${line}</p>`;
+      }
+    }
+  });
+
+  if (inBulletList) {
+    bodyHtml += "</ul>";
+  }
+
+  return `
+    <div class="ats-print-header">
+      <div class="ats-print-name">${name}</div>
+      <div class="ats-print-contact">${contact}</div>
+    </div>
+    <div class="ats-print-body">
+      ${bodyHtml}
+    </div>
+  `;
+}

@@ -15,6 +15,10 @@
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/modules.css">
   <link rel="stylesheet" href="css/kanban.css">
+
+  <!-- Client-Side Document Parsing (PDF.js & Mammoth for 100% in-browser offline parsing) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 </head>
 <body>
   <div class="app-container">
@@ -28,6 +32,12 @@
         </div>
       </div>
       <div class="header-actions">
+        <button id="btn-cmd-palette-trigger" class="btn btn-secondary btn-sm" title="Open Quick Command Switcher (Cmd+K / Ctrl+K)">
+          <span>⌨️</span> <kbd class="cmd-kbd" style="margin-right:0.25rem;">⌘K</kbd> Palette
+        </button>
+        <button id="btn-export-ats-pdf" class="btn btn-secondary btn-sm" title="Print or Save Single-Column ATS Resume to PDF">
+          <span>🖨️</span> Export ATS PDF
+        </button>
         <button id="btn-toggle-theme" class="btn btn-secondary btn-sm" title="Toggle Light / Dark Mode">
           <span id="theme-toggle-icon">🌙</span> <span id="theme-toggle-label">Dark Theme</span>
         </button>
@@ -48,6 +58,16 @@
         <li role="presentation">
           <button class="nav-tab-btn" role="tab" aria-selected="false" data-tab="google-copilot" id="tab-google-copilot">
             <span>🇬</span> Google Copilot <span class="tab-badge" style="background:rgba(26,115,232,0.12); color:#1a73e8; font-weight:700;">XYZ Standard</span>
+          </button>
+        </li>
+        <li role="presentation">
+          <button class="nav-tab-btn" role="tab" aria-selected="false" data-tab="amazon-copilot" id="tab-amazon-copilot">
+            <span>📦</span> Amazon Copilot <span class="tab-badge" style="background:rgba(255,153,0,0.12); color:#d97706; font-weight:700;">16 LPs</span>
+          </button>
+        </li>
+        <li role="presentation">
+          <button class="nav-tab-btn" role="tab" aria-selected="false" data-tab="interview-coach" id="tab-interview-coach">
+            <span>🎯</span> Interview Coach <span class="tab-badge" style="background:rgba(124,58,237,0.12); color:#7c3aed; font-weight:700;">AI Prep</span>
           </button>
         </li>
         <li role="presentation">
@@ -83,8 +103,33 @@
             <h3 class="card-title"><span>📄</span> Candidate Resume</h3>
             <button id="btn-load-ats-sample" class="sample-toggle-btn">Load Demo Profile</button>
           </div>
-          <p class="card-subtitle" style="margin-bottom: 0.75rem;">Paste markdown or raw text. Skills are mapped to standardized O*NET/Lightcast taxonomy.</p>
+          
+          <!-- In-Browser File Ingestion Dropzone -->
+          <div class="resume-dropzone" id="ats-resume-dropzone" title="Click or drag & drop PDF, DOCX, TXT, or MD resume">
+            <div class="dropzone-content">
+              <span class="dropzone-icon">📁</span>
+              <div class="dropzone-text"><strong>Drag & Drop Resume</strong> (.pdf, .docx, .txt, .md) or click to browse</div>
+            </div>
+            <span class="dropzone-privacy-pill">🔒 100% Client-Side Private</span>
+            <input type="file" id="ats-file-input" accept=".pdf,.docx,.txt,.md,text/plain" style="display:none;">
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+            <div class="resume-view-toggles">
+              <button type="button" class="btn-view-toggle active" id="btn-view-editor">Raw Text</button>
+              <button type="button" class="btn-view-toggle" id="btn-view-heatmap">Live Keyword Heatmap</button>
+            </div>
+            <span id="heatmap-status-badge" style="font-size:0.72rem; color:var(--text-muted);">Real-time parsing active</span>
+          </div>
+
           <textarea id="ats-resume-input" class="form-textarea" placeholder="Paste your resume markdown, bullet points, or experience here..."></textarea>
+          <div id="ats-resume-heatmap" class="resume-heatmap-canvas"></div>
+
+          <!-- Ghost Tags for Missing Keywords -->
+          <div id="ats-ghost-tags-wrapper" style="margin-top:0.75rem; display:none;">
+            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-bottom:0.35rem;">Missing High-Value Keywords (Click to add to STAR builder):</div>
+            <div id="ats-ghost-tags" class="ghost-tags-container"></div>
+          </div>
         </div>
 
         <!-- Target Job Description Card -->
@@ -210,6 +255,16 @@
             <h3 class="card-title"><span>📄</span> Candidate Profile / Resume</h3>
             <button id="btn-load-google-sample" class="sample-toggle-btn">Load Google Candidate Sample</button>
           </div>
+
+          <div class="resume-dropzone" id="google-resume-dropzone" title="Click or drag & drop PDF, DOCX, TXT, or MD resume">
+            <div class="dropzone-content">
+              <span class="dropzone-icon">📁</span>
+              <div class="dropzone-text"><strong>Drag & Drop Resume</strong> (.pdf, .docx, .txt, .md) or browse</div>
+            </div>
+            <span class="dropzone-privacy-pill">🔒 100% Client-Side</span>
+            <input type="file" id="google-file-input" accept=".pdf,.docx,.txt,.md,text/plain" style="display:none;">
+          </div>
+
           <p class="card-subtitle" style="margin-bottom: 0.75rem;">Google evaluates experience through the Laszlo Bock XYZ framework and metric density.</p>
           <textarea id="google-resume-input" class="form-textarea" placeholder="Paste your resume markdown, bullet points, or experience here..."></textarea>
         </div>
@@ -375,6 +430,233 @@
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- TAB: AMAZON BAR RAISER & LEADERSHIP PRINCIPLES -->
+    <section id="panel-amazon-copilot" class="tab-content-panel" role="tabpanel" aria-labelledby="tab-amazon-copilot">
+      <!-- Target Amazon Role Selection -->
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title"><span>📦</span> Select Target Amazon Engineering Track & Level</h3>
+            <p class="card-subtitle">Benchmarked against Amazon's 16 Leadership Principles (LPs), Operational Excellence, and Bar Raiser standards.</p>
+          </div>
+          <span class="amazon-brand-badge">Amazon SDE I/II/III</span>
+        </div>
+
+        <div class="google-role-selector-grid" id="amazon-role-selector-grid"></div>
+      </div>
+
+      <!-- Split Inputs -->
+      <div class="matcher-grid">
+        <!-- Resume Input -->
+        <div class="glass-card">
+          <div class="input-panel-header">
+            <h3 class="card-title"><span>📄</span> Candidate Profile / Resume</h3>
+            <button id="btn-load-amazon-sample" class="sample-toggle-btn">Load Amazon SDE II Sample</button>
+          </div>
+
+          <div class="resume-dropzone" id="amazon-resume-dropzone" title="Click or drag & drop PDF, DOCX, TXT, or MD resume">
+            <div class="dropzone-content">
+              <span class="dropzone-icon">📁</span>
+              <div class="dropzone-text"><strong>Drag & Drop Resume</strong> (.pdf, .docx, .txt, .md) or browse</div>
+            </div>
+            <span class="dropzone-privacy-pill">🔒 100% Client-Side</span>
+            <input type="file" id="amazon-file-input" accept=".pdf,.docx,.txt,.md,text/plain" style="display:none;">
+          </div>
+
+          <p class="card-subtitle" style="margin-bottom: 0.75rem;">Amazon Bar Raisers look for individual ownership ("I", not "we") and customer outcomes.</p>
+          <textarea id="amazon-resume-input" class="form-textarea" placeholder="Paste your resume markdown, bullet points, or experience here..."></textarea>
+        </div>
+
+        <!-- Target Amazon JD Requirements -->
+        <div class="glass-card">
+          <div class="input-panel-header">
+            <h3 class="card-title"><span>💼</span> Amazon Job Requirements</h3>
+            <span class="badge badge-neutral" id="amazon-selected-level-badge">SDE II (L5)</span>
+          </div>
+          <p class="card-subtitle" style="margin-bottom: 0.75rem;">Basic and preferred qualifications for AWS, Prime, or Retail engineering tracks.</p>
+          <textarea id="amazon-jd-input" class="form-textarea" placeholder="Amazon job requirements will populate here when you select a role above..."></textarea>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <div class="action-bar-center">
+        <button id="btn-run-amazon-audit" class="btn btn-primary btn-analyze-pulse" style="background: linear-gradient(135deg, #ff9900 0%, #232f3e 100%);">
+          <span>📦 Run Amazon Bar Raiser Audit</span>
+        </button>
+      </div>
+
+      <!-- Amazon Results Card -->
+      <div id="amazon-results-card" class="glass-card ats-results-card">
+        <div class="card-header">
+          <h3 class="card-title"><span>📊</span> Amazon Bar Raiser Score & LP Coverage Audit</h3>
+          <span id="amazon-tier-badge" class="badge badge-success">Evaluating...</span>
+        </div>
+
+        <div class="ats-dashboard-layout">
+          <!-- Circular Gauge -->
+          <div class="ats-gauge-container">
+            <div class="circular-gauge">
+              <svg viewBox="0 0 160 160">
+                <circle class="gauge-bg" cx="80" cy="80" r="70"></circle>
+                <circle id="amazon-gauge-circle" class="gauge-progress" cx="80" cy="80" r="70" style="stroke:#ff9900;"></circle>
+              </svg>
+              <div class="gauge-text">
+                <div id="amazon-gauge-score" class="gauge-number">0</div>
+                <div class="gauge-label">Bar Raiser</div>
+              </div>
+            </div>
+            <div id="amazon-lp-badge" class="badge badge-neutral gauge-tier-badge">0 / 16 LPs Covered</div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.75rem; text-align:center;">
+              Evaluates 16 Leadership Principles & OpEx
+            </div>
+          </div>
+
+          <!-- Dimension Breakdown -->
+          <div>
+            <h4 style="font-size:0.9rem; font-weight:700; color:var(--text-heading); margin-bottom:0.75rem;">
+              Amazon Bar Raiser Evaluation Dimensions:
+            </h4>
+            <div class="google-dimensions-grid">
+              <div class="google-dimension-card">
+                <div class="dimension-header">
+                  <span class="dimension-title">16 LP Coverage (35%)</span>
+                  <span id="score-amazon-lp" class="badge badge-neutral">0%</span>
+                </div>
+                <div class="dimension-bar-track">
+                  <div id="bar-amazon-lp" class="dimension-bar-fill" style="width:0%; background:#ff9900;"></div>
+                </div>
+                <small style="font-size:0.72rem; color:var(--text-muted); margin-top:0.35rem; display:block;">
+                  Customer Obsession, Ownership, Bias for Action, Dive Deep
+                </small>
+              </div>
+
+              <div class="google-dimension-card">
+                <div class="dimension-header">
+                  <span class="dimension-title">AWS & Distributed Scale (30%)</span>
+                  <span id="score-amazon-scale" class="badge badge-neutral">0%</span>
+                </div>
+                <div class="dimension-bar-track">
+                  <div id="bar-amazon-scale" class="dimension-bar-fill" style="width:0%; background:#0284c7;"></div>
+                </div>
+                <small style="font-size:0.72rem; color:var(--text-muted); margin-top:0.35rem; display:block;">
+                  AWS primitives, DynamoDB, microservices, TPS, p99 latency
+                </small>
+              </div>
+
+              <div class="google-dimension-card">
+                <div class="dimension-header">
+                  <span class="dimension-title">Operational Excellence (20%)</span>
+                  <span id="score-amazon-opex" class="badge badge-neutral">0%</span>
+                </div>
+                <div class="dimension-bar-track">
+                  <div id="bar-amazon-opex" class="dimension-bar-fill" style="width:0%; background:#059669;"></div>
+                </div>
+                <small style="font-size:0.72rem; color:var(--text-muted); margin-top:0.35rem; display:block;">
+                  On-call, postmortems, 5-Whys, Root Cause, SLA/SLO metrics
+                </small>
+              </div>
+
+              <div class="google-dimension-card">
+                <div class="dimension-header">
+                  <span class="dimension-title">Customer Obsession (15%)</span>
+                  <span id="score-amazon-cust" class="badge badge-neutral">0%</span>
+                </div>
+                <div class="dimension-bar-track">
+                  <div id="bar-amazon-cust" class="dimension-bar-fill" style="width:0%; background:#7c3aed;"></div>
+                </div>
+                <small style="font-size:0.72rem; color:var(--text-muted); margin-top:0.35rem; display:block;">
+                  Working backwards, customer pain point resolution, NPS
+                </small>
+              </div>
+            </div>
+
+            <!-- 16 LPs Grid -->
+            <div style="margin-top:1rem; background:var(--bg-elevated); border:1px solid var(--border-card); border-radius:var(--radius-md); padding:1rem;">
+              <strong style="font-size:0.86rem; color:var(--text-heading);">16 Leadership Principles Evidence Tracker:</strong>
+              <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;">Green chips indicate concrete keyword and behavioral proof found in resume bullets.</p>
+              <div id="amazon-lp-chips-container" class="amazon-lp-grid"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Amazon Bar Raiser STAR Rewriter -->
+        <div class="glass-card google-xyz-card" style="margin-top:1.5rem;">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title"><span>📦</span> Amazon Bar Raiser STAR Bullet Rewriter</h3>
+              <p class="card-subtitle">Format: <code>Demonstrated [Leadership Principle] by [Situation/Task]; engineered [Action], achieving [Result]</code></p>
+            </div>
+            <span class="badge badge-neutral">Amazon Bar Raiser Standard</span>
+          </div>
+
+          <div class="xyz-formula-breakdown">
+            <div class="form-group">
+              <label class="form-label" style="color:#d97706;">Select Target Leadership Principle</label>
+              <select id="amazon-star-lp-select" class="form-select">
+                <option value="Ownership">Ownership (Championing long-term health)</option>
+                <option value="Customer Obsession">Customer Obsession (Working backwards)</option>
+                <option value="Dive Deep">Dive Deep (Root cause & telemetry)</option>
+                <option value="Invent and Simplify">Invent and Simplify (Removing complexity)</option>
+                <option value="Bias for Action">Bias for Action (Two-way doors & speed)</option>
+                <option value="Deliver Results">Deliver Results (Overcoming obstacles)</option>
+                <option value="Frugality">Frugality (Cost optimization & efficiency)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Situation & Task (What constraint or customer bottleneck existed?)</label>
+              <input type="text" id="amazon-star-st-input" class="form-control" placeholder="e.g. resolving intermittent 504 gateway timeouts during Prime Day traffic spikes">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Action (What specific technical architecture did YOU personally execute?)</label>
+              <input type="text" id="amazon-star-act-input" class="form-control" placeholder="e.g. an asynchronous SQS queue processor with distributed Redis caching in Java">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Measurable Result (What was the customer SLA or cost outcome?)</label>
+              <input type="text" id="amazon-star-res-input" class="form-control" placeholder="e.g. 99.999% availability, zero dropped orders, and $75,000 annual EC2 savings">
+            </div>
+          </div>
+
+          <div class="xyz-component-preview">
+            <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.4rem;">
+              Live Amazon Bar Raiser STAR Statement:
+            </div>
+            <div id="amazon-star-live-output" style="font-size:0.96rem; font-weight:500; color:var(--text-main); line-height:1.6;">
+              Demonstrated <span style="color:#d97706; font-weight:700;">[Leadership Principle]</span> by tackling <span style="color:#0284c7;">[Situation]</span>; engineered <span style="color:#7c3aed;">[Action]</span>, resulting in <span style="color:#059669; font-weight:700;">[Result]</span>.
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1rem;">
+            <button id="btn-copy-amazon-star" class="btn btn-secondary btn-sm">Copy Amazon STAR Bullet</button>
+            <button id="btn-append-amazon-star" class="btn btn-success btn-sm">+ Append to Amazon Resume</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: AI INTERVIEW PREP COACH -->
+    <section id="panel-interview-coach" class="tab-content-panel" role="tabpanel" aria-labelledby="tab-interview-coach">
+      <div class="glass-card" style="margin-bottom:1.5rem;">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title"><span>🎯</span> AI Interview Prep Coach (Targeted at Identified Skill Gaps)</h3>
+            <p class="card-subtitle">Automatically converts missing keywords and low-density areas from your ATS audits into tailored interview questions and answer blueprints.</p>
+          </div>
+          <button id="btn-generate-interview-questions" class="btn btn-primary btn-sm">⚡ Refresh Questions from Gap Analysis</button>
+        </div>
+
+        <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:center; margin-top:0.75rem; font-size:0.82rem; color:var(--text-secondary);">
+          <div>Target Track: <strong id="interview-target-company" style="color:var(--text-heading);">Google / Tier-1 Tech</strong></div>
+          <div>Primary Focus Gap: <span id="interview-focus-gap" class="badge badge-warning">Distributed Systems</span></div>
+        </div>
+      </div>
+
+      <!-- Generated Questions List -->
+      <div id="interview-questions-container" class="interview-coach-container"></div>
     </section>
 
     <!-- TAB 2: ANTI-AI HUMANIZER ENGINE -->
@@ -609,6 +891,26 @@
 
     <!-- TAB 5: APPLICATION TRACKER (KANBAN) -->
     <section id="panel-tracker" class="tab-content-panel" role="tabpanel" aria-labelledby="tab-tracker">
+      <!-- Pipeline Analytics Bar -->
+      <div class="pipeline-analytics-bar" id="pipeline-analytics-bar">
+        <div class="pipeline-stat-card">
+          <span class="pipeline-stat-value" id="stat-total-jobs">0</span>
+          <span class="pipeline-stat-label">Active Applications</span>
+        </div>
+        <div class="pipeline-stat-card">
+          <span class="pipeline-stat-value" id="stat-interview-rate" style="color:#059669;">0%</span>
+          <span class="pipeline-stat-label">Interview Rate</span>
+        </div>
+        <div class="pipeline-stat-card">
+          <span class="pipeline-stat-value" id="stat-offer-rate" style="color:#7c3aed;">0%</span>
+          <span class="pipeline-stat-label">Offer Conversion</span>
+        </div>
+        <div class="pipeline-stat-card">
+          <span class="pipeline-stat-value" id="stat-avg-days">14d</span>
+          <span class="pipeline-stat-label">Pipeline Velocity</span>
+        </div>
+      </div>
+
       <div class="tracker-toolbar">
         <div class="tracker-search-box">
           <span class="search-icon">🔍</span>
@@ -731,6 +1033,45 @@
       </div>
     </div>
   </div>
+
+  <!-- COMMAND PALETTE MODAL (Cmd+K / Ctrl+K) -->
+  <div id="command-palette-modal">
+    <div class="cmd-palette-dialog">
+      <div class="cmd-palette-header">
+        <span style="font-size:1.2rem;">⚡</span>
+        <input type="text" id="cmd-palette-input" class="cmd-palette-input" placeholder="Type a command or module (e.g. 'ats', 'google', 'amazon', 'pdf')..." autocomplete="off">
+        <kbd class="cmd-kbd">ESC</kbd>
+      </div>
+      <div id="cmd-palette-list" class="cmd-palette-list"></div>
+    </div>
+  </div>
+
+  <!-- ATS PRINT PREVIEW MODAL -->
+  <div id="ats-print-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width:760px;">
+      <div class="card-header">
+        <h3 class="card-title"><span>🖨️</span> ATS Single-Column Resume PDF Preview</h3>
+        <button id="btn-close-print-modal" class="card-icon-btn" style="width:30px; height:30px;">✕</button>
+      </div>
+      <p class="card-subtitle" style="margin-bottom:1rem;">
+        Single-column clean hierarchy optimized for 100% parsing success across Workday, Greenhouse, Lever, and Taleo.
+      </p>
+
+      <div id="ats-print-preview-body" style="background:#fff; color:#000; padding:1.5rem; border:1px solid #ddd; border-radius:6px; max-height:420px; overflow-y:auto; font-family:-apple-system, BlinkMacSystemFont, Arial, sans-serif; font-size:10pt; line-height:1.45;">
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.25rem; flex-wrap:wrap; gap:0.75rem;">
+        <span style="font-size:0.75rem; color:var(--text-muted);">Prints cleanly via your browser's Print-to-PDF dialog. Zero web chrome.</span>
+        <div style="display:flex; gap:0.5rem;">
+          <button id="btn-download-json-resume" class="btn btn-secondary btn-sm">Download JSON Resume</button>
+          <button id="btn-trigger-print" class="btn btn-primary btn-sm">🖨️ Open Print to PDF Dialog</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ATS SINGLE-COLUMN RESUME PRINT AREA (Targeted exclusively by @media print) -->
+  <div id="ats-resume-print-area" style="display:none;"></div>
 
   <!-- Floating Toast Notifications Container -->
   <div id="toast-container"></div>

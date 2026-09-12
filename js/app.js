@@ -3,14 +3,18 @@
  * Main Application Orchestrator
  */
 
-import { analyzeAtsMatch, buildStarBullet, generateStarDraftsForSkill } from "./ats-matcher.js";
+import { analyzeAtsMatch, buildStarBullet, generateStarDraftsForSkill, generateResumeHeatmapHtml, generateAtsPrintHtml } from "./ats-matcher.js";
 import { STAR_ACTION_VERBS } from "./taxonomy.js";
-import { auditContent, humanizeText, calculateReadability } from "./humanizer.js";
+import { auditContent, humanizeText, calculateReadability, BANNED_PATTERNS } from "./humanizer.js";
 import { HOOK_FORMULAS, buildLinkedInPost, analyzePostStructure } from "./linkedin-engine.js";
 import { buildHeadline, buildAboutSection, PROFILE_AUDIT_ITEMS } from "./profile-builder.js";
 import { JobTracker, STAGES } from "./tracker.js";
 import { GeminiClient } from "./gemini-client.js";
 import { GOOGLE_JOB_PROFILES, auditGoogleAtsProfile, buildGoogleXyzBullet } from "./google-engine.js";
+import { setupDropzone } from "./file-parser.js";
+import { auditAmazonLeadershipPrinciples, buildAmazonStarBullet, AMAZON_JOB_PROFILES, AMAZON_LEADERSHIP_PRINCIPLES } from "./amazon-engine.js";
+import { generateInterviewQuestions } from "./interview-coach.js";
+import { setupCommandPalette } from "./command-palette.js";
 
 // Initialize Subsystems
 const jobTracker = new JobTracker();
@@ -114,11 +118,14 @@ document.addEventListener("DOMContentLoaded", () => {
   initTabs();
   initAtsMatcher();
   initGoogleCopilot();
+  initAmazonCopilot();
+  initInterviewCoach();
   initHumanizer();
   initLinkedInEngine();
   initProfileOptimizer();
   initTracker();
   initSettingsModal();
+  initCommandPaletteAndExport();
 });
 
 function initTheme() {
@@ -191,6 +198,49 @@ function initAtsMatcher() {
   const jdInput = document.getElementById("ats-jd-input");
   const btnAnalyze = document.getElementById("btn-run-ats");
   const btnLoadSample = document.getElementById("btn-load-ats-sample");
+
+  // In-Browser Client-Side File Ingestion Dropzone
+  setupDropzone({
+    dropzoneEl: document.getElementById("ats-resume-dropzone"),
+    textareaEl: resumeInput,
+    onFileParsed: (text, filename) => {
+      showToast(`Parsed ${filename} (${text.length} chars)`, "success");
+      runAtsAnalysis();
+    }
+  });
+
+  // Raw Text vs Live Heatmap View Toggles
+  const btnViewEditor = document.getElementById("btn-view-editor");
+  const btnViewHeatmap = document.getElementById("btn-view-heatmap");
+  const resumeHeatmap = document.getElementById("ats-resume-heatmap");
+
+  function setResumeView(mode) {
+    if (mode === "heatmap") {
+      if (btnViewHeatmap) btnViewHeatmap.classList.add("active");
+      if (btnViewEditor) btnViewEditor.classList.remove("active");
+      resumeInput.style.display = "none";
+      if (resumeHeatmap) resumeHeatmap.style.display = "block";
+      updateHeatmapDisplay();
+    } else {
+      if (btnViewEditor) btnViewEditor.classList.add("active");
+      if (btnViewHeatmap) btnViewHeatmap.classList.remove("active");
+      resumeInput.style.display = "block";
+      if (resumeHeatmap) resumeHeatmap.style.display = "none";
+    }
+  }
+
+  if (btnViewEditor && btnViewHeatmap) {
+    btnViewEditor.addEventListener("click", () => setResumeView("editor"));
+    btnViewHeatmap.addEventListener("click", () => setResumeView("heatmap"));
+  }
+
+  function updateHeatmapDisplay() {
+    if (!resumeHeatmap) return;
+    const text = resumeInput.value;
+    const matched = state.activeAtsAnalysis ? state.activeAtsAnalysis.matchedSkills : [];
+    const banned = BANNED_PATTERNS.map(b => b.pattern);
+    resumeHeatmap.innerHTML = generateResumeHeatmapHtml(text, matched, banned);
+  }
 
   // Load sample data button
   btnLoadSample.addEventListener("click", () => {
@@ -323,6 +373,36 @@ function runAtsAnalysis() {
       });
       missingContainer.appendChild(tag);
     });
+  }
+
+  // Render Ghost Tags for Missing Keywords under Resume Input
+  const ghostWrapper = document.getElementById("ats-ghost-tags-wrapper");
+  const ghostContainer = document.getElementById("ats-ghost-tags");
+  if (ghostWrapper && ghostContainer) {
+    ghostContainer.innerHTML = "";
+    if (analysis.missingSkills && analysis.missingSkills.length > 0) {
+      ghostWrapper.style.display = "block";
+      analysis.missingSkills.forEach(s => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "ghost-tag";
+        chip.innerHTML = `+ ${s.canonical}`;
+        chip.title = `Click to generate a STAR bullet for ${s.canonical}`;
+        chip.addEventListener("click", () => {
+          injectSkillIntoStar(s.canonical);
+        });
+        ghostContainer.appendChild(chip);
+      });
+    } else {
+      ghostWrapper.style.display = "none";
+    }
+  }
+
+  // Refresh live heatmap if visible
+  const resumeHeatmap = document.getElementById("ats-resume-heatmap");
+  if (resumeHeatmap && resumeHeatmap.style.display !== "none") {
+    const banned = BANNED_PATTERNS.map(b => b.pattern);
+    resumeHeatmap.innerHTML = generateResumeHeatmapHtml(resumeText, analysis.matchedSkills, banned);
   }
 
   showToast(`Analysis Complete: ${analysis.score}% ATS Match`, analysis.score >= 70 ? "success" : "info");
@@ -759,12 +839,42 @@ function initTracker() {
   });
 }
 
+function updatePipelineAnalytics(allJobs = jobTracker.getAll()) {
+  const totalEl = document.getElementById("stat-total-jobs");
+  const interviewRateEl = document.getElementById("stat-interview-rate");
+  const offerRateEl = document.getElementById("stat-offer-rate");
+  const avgDaysEl = document.getElementById("stat-avg-days");
+
+  if (!totalEl) return;
+
+  const total = allJobs.length;
+  totalEl.textContent = total;
+
+  if (total === 0) {
+    if (interviewRateEl) interviewRateEl.textContent = "0%";
+    if (offerRateEl) offerRateEl.textContent = "0%";
+    if (avgDaysEl) avgDaysEl.textContent = "0d";
+    return;
+  }
+
+  const interviewCount = allJobs.filter(j => j.status === "interview" || j.status === "offer").length;
+  const offerCount = allJobs.filter(j => j.status === "offer").length;
+
+  const interviewRate = Math.round((interviewCount / total) * 100);
+  const offerRate = Math.round((offerCount / total) * 100);
+
+  if (interviewRateEl) interviewRateEl.textContent = `${interviewRate}%`;
+  if (offerRateEl) offerRateEl.textContent = `${offerRate}%`;
+  if (avgDaysEl) avgDaysEl.textContent = "14d";
+}
+
 function renderKanbanBoard(filterQuery = "") {
   const board = document.getElementById("kanban-board-container");
   if (!board) return;
   board.innerHTML = "";
 
   const allJobs = jobTracker.getAll();
+  updatePipelineAnalytics(allJobs);
 
   STAGES.forEach(stage => {
     const stageJobs = allJobs.filter(j => {
@@ -996,6 +1106,16 @@ function initGoogleCopilot() {
   const levelBadge = document.getElementById("google-selected-level-badge");
   const btnRunAudit = document.getElementById("btn-run-google-audit");
   const btnLoadSample = document.getElementById("btn-load-google-sample");
+
+  // In-Browser Client-Side File Ingestion Dropzone
+  setupDropzone({
+    dropzoneEl: document.getElementById("google-resume-dropzone"),
+    textareaEl: resumeInput,
+    onFileParsed: (text, filename) => {
+      showToast(`Parsed ${filename} for Google audit`, "success");
+      runGoogleAudit();
+    }
+  });
 
   // Google XYZ Formula Rewriter Inputs
   const xInput = document.getElementById("xyz-x-input");
@@ -1274,4 +1394,450 @@ function runGoogleAudit() {
   });
 
   showToast(`Google Audit Complete: ${audit.googleAtsScore}% (${audit.levelEval.level} Scope)`, "success");
+}
+
+/* ==========================================================================
+   MODULE: AMAZON BAR RAISER & 16 LEADERSHIP PRINCIPLES COPILOT
+   ========================================================================== */
+const amazonSampleResume = `Jordan Taylor
+Senior Backend Systems Engineer | Distributed Architecture & Cloud Scale
+Email: jordan.taylor@example.com | GitHub: github.com/jtaylor-cloud
+
+SUMMARY:
+Customer-obsessed senior distributed systems engineer with 5+ years of experience architecting high-throughput microservices on AWS (ECS, DynamoDB, SQS, S3). Proven track record of owning mission-critical systems end-to-end, driving operational excellence through root cause analysis (5-Whys), and delivering robust software handling 30,000+ TPS.
+
+PROFESSIONAL EXPERIENCE:
+Software Development Engineer II | CloudCommerce Corp (2022 - Present)
+- Demonstrated Ownership by taking end-to-end accountability for distributed checkout payment service processing $12M daily volume; eliminated single point of failure by decoupling database layer into DynamoDB with global secondary indexes.
+- Demonstrated Customer Obsession and Invent and Simplify by re-architecting asynchronous order fulfillment pipelines using AWS SQS and Lambda, decreasing p99 customer latency from 480ms to 42ms.
+- Demonstrated Dive Deep and Insist on the Highest Standards during on-call rotation postmortems; authored 4 Correction of Error (COE) docs and instituted automated synthetic canaries, cutting Sev-2 operational incidents by 62%.
+- Mentored 3 junior engineers on multi-threading, two-way door decision frameworks, and unit testing standards, elevating team test coverage to 91%.
+
+Software Engineer | HighScale Media (2020 - 2022)
+- Built high-throughput telemetry ingestion microservices in Java and Go, streaming 25,000 TPS across multi-region AWS clusters.
+- Demonstrated Bias for Action by delivering an urgent GDPR data deletion compliance service 3 weeks ahead of scheduled launch milestone.
+- Reduced annual AWS cloud infrastructure spend by $84,000 through automated S3 lifecycle tiering and DynamoDB on-demand autoscaling.
+
+TECHNICAL SKILLS:
+- Languages: Java, Python, Go, TypeScript, SQL
+- AWS & Cloud: DynamoDB, SQS, SNS, S3, ECS, Lambda, CloudWatch, Terraform
+- Architecture: Distributed Systems, Microservices, Event-Driven Architecture, High Availability, OpEx, Postmortems`;
+
+function initAmazonCopilot() {
+  const roleSelectorGrid = document.getElementById("amazon-role-selector-grid");
+  const jdInput = document.getElementById("amazon-jd-input");
+  const resumeInput = document.getElementById("amazon-resume-input");
+  const levelBadge = document.getElementById("amazon-selected-level-badge");
+  const btnRunAudit = document.getElementById("btn-run-amazon-audit");
+  const btnLoadSample = document.getElementById("btn-load-amazon-sample");
+
+  // In-Browser Client-Side File Ingestion Dropzone
+  setupDropzone({
+    dropzoneEl: document.getElementById("amazon-resume-dropzone"),
+    textareaEl: resumeInput,
+    onFileParsed: (text, filename) => {
+      showToast(`Parsed ${filename} for Amazon Bar Raiser audit`, "success");
+      runAmazonAudit();
+    }
+  });
+
+  // Amazon STAR Formula Inputs
+  const lpSelect = document.getElementById("amazon-star-lp-select");
+  const stInput = document.getElementById("amazon-star-st-input");
+  const actInput = document.getElementById("amazon-star-act-input");
+  const resInput = document.getElementById("amazon-star-res-input");
+  const liveOutput = document.getElementById("amazon-star-live-output");
+  const btnCopyStar = document.getElementById("btn-copy-amazon-star");
+  const btnAppendStar = document.getElementById("btn-append-amazon-star");
+
+  function updateAmazonStarPreview() {
+    if (!liveOutput) return;
+    const bullet = buildAmazonStarBullet({
+      chosenLp: lpSelect ? lpSelect.value : "Ownership",
+      situationTask: stInput ? stInput.value : "",
+      actionLp: actInput ? actInput.value : "",
+      measurableResult: resInput ? resInput.value : ""
+    });
+
+    if (!bullet) {
+      liveOutput.innerHTML = `Demonstrated <span style="color:#d97706; font-weight:700;">[Leadership Principle]</span> by tackling <span style="color:#0284c7;">[Situation]</span>; engineered <span style="color:#7c3aed;">[Action]</span>, resulting in <span style="color:#059669; font-weight:700;">[Result]</span>.`;
+      return;
+    }
+    liveOutput.textContent = bullet;
+  }
+
+  [lpSelect, stInput, actInput, resInput].forEach(inp => {
+    if (inp) inp.addEventListener("input", updateAmazonStarPreview);
+  });
+
+  function applyAmazonRoleSelection(roleId) {
+    const role = AMAZON_JOB_PROFILES.find(r => r.id === roleId) || AMAZON_JOB_PROFILES[1];
+    document.querySelectorAll(".amazon-role-card").forEach(c => {
+      c.classList.toggle("active", c.getAttribute("data-id") === role.id);
+    });
+    if (jdInput) jdInput.value = role.requirements;
+    if (levelBadge) levelBadge.textContent = role.level;
+  }
+
+  // Populate Role selector cards
+  if (roleSelectorGrid) {
+    roleSelectorGrid.innerHTML = "";
+    AMAZON_JOB_PROFILES.forEach((role, idx) => {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = `google-role-card amazon-role-card ${role.id === "amazon_sde2" ? "active" : ""}`;
+      card.setAttribute("data-id", role.id);
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.25rem;">
+          <strong style="font-size:0.86rem; color:var(--text-heading);">${role.title.split(" - ")[0]}</strong>
+          <span class="badge badge-neutral" style="font-size:0.68rem;">${role.level}</span>
+        </div>
+        <p style="font-size:0.75rem; color:var(--text-secondary); line-height:1.4; margin:0;">${role.overview}</p>
+      `;
+
+      card.addEventListener("click", () => {
+        applyAmazonRoleSelection(role.id);
+        showToast(`Switched target role to ${role.level}`, "info");
+      });
+
+      roleSelectorGrid.appendChild(card);
+    });
+
+    // Initialize with SDE II default
+    applyAmazonRoleSelection("amazon_sde2");
+  }
+
+  if (btnLoadSample) {
+    btnLoadSample.addEventListener("click", () => {
+      if (resumeInput) resumeInput.value = amazonSampleResume;
+      showToast("Loaded Amazon SDE II candidate sample!", "success");
+      runAmazonAudit();
+    });
+  }
+
+  if (btnRunAudit) {
+    btnRunAudit.addEventListener("click", () => {
+      runAmazonAudit();
+    });
+  }
+
+  if (btnCopyStar) {
+    btnCopyStar.addEventListener("click", () => {
+      const bullet = buildAmazonStarBullet({
+        chosenLp: lpSelect ? lpSelect.value : "Ownership",
+        situationTask: stInput ? stInput.value : "",
+        actionLp: actInput ? actInput.value : "",
+        measurableResult: resInput ? resInput.value : ""
+      });
+      if (!bullet) {
+        showToast("Fill in STAR fields first", "warning");
+        return;
+      }
+      navigator.clipboard.writeText(bullet);
+      showToast("Amazon Bar Raiser STAR bullet copied!", "success");
+    });
+  }
+
+  if (btnAppendStar) {
+    btnAppendStar.addEventListener("click", () => {
+      const bullet = buildAmazonStarBullet({
+        chosenLp: lpSelect ? lpSelect.value : "Ownership",
+        situationTask: stInput ? stInput.value : "",
+        actionLp: actInput ? actInput.value : "",
+        measurableResult: resInput ? resInput.value : ""
+      });
+      if (!bullet) {
+        showToast("Fill in STAR fields first", "warning");
+        return;
+      }
+      if (resumeInput) resumeInput.value += `\n- ${bullet}`;
+      showToast("Appended to Amazon Resume!", "success");
+      runAmazonAudit();
+    });
+  }
+}
+
+function runAmazonAudit() {
+  const resumeText = document.getElementById("amazon-resume-input")?.value || "";
+  const jdText = document.getElementById("amazon-jd-input")?.value || "";
+
+  if (!resumeText.trim()) {
+    showToast("Please provide a resume to run the Amazon Bar Raiser audit", "warning");
+    return;
+  }
+
+  const audit = auditAmazonLeadershipPrinciples(resumeText, jdText);
+
+  // Show results card
+  const resultsCard = document.getElementById("amazon-results-card");
+  if (resultsCard) resultsCard.classList.add("active");
+
+  // Animate circular gauge
+  const gaugeNumber = document.getElementById("amazon-gauge-score");
+  const gaugeCircle = document.getElementById("amazon-gauge-circle");
+  const gaugeTier = document.getElementById("amazon-tier-badge");
+  const lpBadge = document.getElementById("amazon-lp-badge");
+
+  if (gaugeNumber) gaugeNumber.textContent = audit.amazonScore;
+  if (gaugeTier) {
+    gaugeTier.textContent = audit.tier;
+    gaugeTier.style.color = audit.tierColor;
+  }
+  if (lpBadge) {
+    lpBadge.textContent = `${audit.lpCoverageCount} / 16 LPs Covered`;
+    lpBadge.className = `badge ${audit.lpCoverageCount >= 8 ? "badge-success" : audit.lpCoverageCount >= 4 ? "badge-warning" : "badge-danger"}`;
+  }
+
+  if (gaugeCircle) {
+    const offset = 440 - (440 * audit.amazonScore) / 100;
+    gaugeCircle.style.strokeDashoffset = offset;
+    gaugeCircle.style.stroke = audit.tierColor;
+  }
+
+  // Update Dimensions
+  const setDim = (scoreId, barId, val) => {
+    const s = document.getElementById(scoreId);
+    const b = document.getElementById(barId);
+    if (s) s.textContent = `${val}%`;
+    if (b) b.style.width = `${val}%`;
+  };
+
+  setDim("score-amazon-lp", "bar-amazon-lp", audit.dimensions.lpCoverage);
+  setDim("score-amazon-scale", "bar-amazon-scale", audit.dimensions.scale);
+  setDim("score-amazon-opex", "bar-amazon-opex", audit.dimensions.operationalExcellence);
+  setDim("score-amazon-cust", "bar-amazon-cust", audit.dimensions.customerObsession);
+
+  // Render 16 LP Chips
+  const container = document.getElementById("amazon-lp-chips-container");
+  if (container) {
+    container.innerHTML = "";
+    AMAZON_LEADERSHIP_PRINCIPLES.forEach(lp => {
+      const match = audit.lpMatches.find(m => m.lp.id === lp.id);
+      const chip = document.createElement("div");
+      if (match) {
+        chip.className = "amazon-lp-chip matched";
+        chip.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+            <strong style="color:#059669;">✓ ${lp.name}</strong>
+            <span class="badge badge-success" style="font-size:0.65rem;">Covered</span>
+          </div>
+          <div style="font-size:0.7rem; color:var(--text-muted);">${lp.short}</div>
+          <div style="font-size:0.68rem; color:#059669; margin-top:0.2rem;">Found: ${match.matchedKeywords.slice(0, 3).join(", ")}</div>
+        `;
+      } else {
+        chip.className = "amazon-lp-chip missing";
+        chip.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+            <strong style="color:var(--text-secondary);">○ ${lp.name}</strong>
+            <span class="badge badge-neutral" style="font-size:0.65rem;">Missing</span>
+          </div>
+          <div style="font-size:0.7rem; color:var(--text-muted);">${lp.short}</div>
+        `;
+      }
+      container.appendChild(chip);
+    });
+  }
+
+  showToast(`Amazon Bar Raiser Audit: ${audit.amazonScore}% (${audit.lpCoverageCount}/16 LPs)`, "success");
+}
+
+/* ==========================================================================
+   MODULE: AI INTERVIEW PREP COACH LOGIC
+   ========================================================================== */
+function initInterviewCoach() {
+  const btnRefresh = document.getElementById("btn-generate-interview-questions");
+  const targetCompanyEl = document.getElementById("interview-target-company");
+  const focusGapEl = document.getElementById("interview-focus-gap");
+  const container = document.getElementById("interview-questions-container");
+
+  function refreshQuestions() {
+    if (!container) return;
+
+    // Gather gaps from active ATS analysis or defaults
+    let missingSkills = [];
+    let matchedSkills = [];
+    let company = "Google / Tier-1 Tech";
+
+    if (state.currentTab === "amazon-copilot") {
+      company = "Amazon (Bar Raiser)";
+    }
+
+    if (state.activeAtsAnalysis && state.activeAtsAnalysis.missingSkills.length > 0) {
+      missingSkills = state.activeAtsAnalysis.missingSkills.map(s => s.canonical);
+      matchedSkills = state.activeAtsAnalysis.matchedSkills.map(s => s.canonical);
+    } else {
+      missingSkills = ["Distributed Systems", "Kubernetes", "Observability & SRE", "Concurrency"];
+      matchedSkills = ["TypeScript", "React", "Node.js", "Docker", "PostgreSQL"];
+    }
+
+    const plan = generateInterviewQuestions({
+      missingSkills,
+      matchedSkills,
+      company
+    });
+
+    if (targetCompanyEl) targetCompanyEl.textContent = plan.company;
+    if (focusGapEl) focusGapEl.textContent = plan.primaryGap;
+
+    container.innerHTML = "";
+    plan.questions.forEach((q, idx) => {
+      const card = document.createElement("div");
+      card.className = "interview-qa-card";
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <span class="badge ${q.badgeClass}">Question ${idx + 1}: ${q.category}</span>
+            <span class="badge badge-neutral" style="font-size:0.7rem;">Targeted Gap: <strong>${q.targetedGap}</strong></span>
+          </div>
+        </div>
+
+        <h4 style="font-size:1.02rem; font-weight:700; color:var(--text-heading); line-height:1.5; margin-bottom:0.75rem;">
+          ${q.question}
+        </h4>
+
+        <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.85rem;">
+          ${q.keyConcepts.map(c => `<span class="badge badge-neutral" style="font-size:0.72rem; background:rgba(79,70,229,0.06); color:var(--accent-primary);">⚡ ${c}</span>`).join("")}
+        </div>
+
+        <div class="interview-guide-box">
+          <strong style="color:var(--text-heading); display:block; margin-bottom:0.35rem;">
+            📘 Model Answer Blueprint (${q.modelAnswerGuide.framework}):
+          </strong>
+          <ul style="margin:0 0 0.5rem 1.25rem; padding:0; list-style-type:disc;">
+            <li><strong>Step 1:</strong> ${q.modelAnswerGuide.step1}</li>
+            <li><strong>Step 2:</strong> ${q.modelAnswerGuide.step2}</li>
+            <li><strong>Step 3:</strong> ${q.modelAnswerGuide.step3}</li>
+          </ul>
+          <div style="color:var(--accent-rose-text); font-weight:600; font-size:0.76rem;">
+            ⚠️ Common Pitfall: ${q.modelAnswerGuide.pitfallsToAvoid}
+          </div>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  if (btnRefresh) {
+    btnRefresh.addEventListener("click", () => {
+      refreshQuestions();
+      showToast("Generated new targeted interview questions", "success");
+    });
+  }
+
+  // Initial populate
+  refreshQuestions();
+}
+
+/* ==========================================================================
+   COMMAND PALETTE & ATS PRINT/EXPORT LOGIC
+   ========================================================================== */
+function initCommandPaletteAndExport() {
+  setupCommandPalette({
+    onSelectAction: (actionId) => {
+      handlePaletteAction(actionId);
+    }
+  });
+
+  // Export ATS PDF Modal
+  const printModal = document.getElementById("ats-print-modal");
+  const btnOpenPrint = document.getElementById("btn-export-ats-pdf");
+  const btnClosePrint = document.getElementById("btn-close-print-modal");
+  const btnTriggerPrint = document.getElementById("btn-trigger-print");
+  const btnDownloadJson = document.getElementById("btn-download-json-resume");
+  const previewBody = document.getElementById("ats-print-preview-body");
+  const printArea = document.getElementById("ats-resume-print-area");
+
+  function getActiveResumeText() {
+    const r1 = document.getElementById("ats-resume-input")?.value;
+    const r2 = document.getElementById("google-resume-input")?.value;
+    const r3 = document.getElementById("amazon-resume-input")?.value;
+    return (r1 && r1.trim()) || (r2 && r2.trim()) || (r3 && r3.trim()) || SAMPLE_PRESETS.resume;
+  }
+
+  function openPrintModal() {
+    if (!printModal || !previewBody) return;
+    const resumeText = getActiveResumeText();
+    const printHtml = generateAtsPrintHtml(resumeText);
+    previewBody.innerHTML = printHtml;
+    if (printArea) printArea.innerHTML = printHtml;
+    printModal.classList.add("active");
+  }
+
+  function closePrintModal() {
+    if (printModal) printModal.classList.remove("active");
+  }
+
+  if (btnOpenPrint) btnOpenPrint.addEventListener("click", openPrintModal);
+  if (btnClosePrint) btnClosePrint.addEventListener("click", closePrintModal);
+
+  if (btnTriggerPrint) {
+    btnTriggerPrint.addEventListener("click", () => {
+      const resumeText = getActiveResumeText();
+      const printHtml = generateAtsPrintHtml(resumeText);
+      if (printArea) {
+        printArea.innerHTML = printHtml;
+        printArea.style.display = "block";
+      }
+      window.print();
+      if (printArea) {
+        printArea.style.display = "none";
+      }
+    });
+  }
+
+  if (btnDownloadJson) {
+    btnDownloadJson.addEventListener("click", () => {
+      const resumeText = getActiveResumeText();
+      const lines = resumeText.split("\n").map(l => l.trim()).filter(Boolean);
+      const jsonResume = {
+        basics: {
+          name: lines[0] || "Candidate Name",
+          label: lines.length > 1 && !lines[1].startsWith("-") ? lines[1] : "Software Engineer",
+          email: "alex.chen@example.com",
+          summary: resumeText.slice(0, 400)
+        },
+        skills: state.activeAtsAnalysis ? state.activeAtsAnalysis.matchedSkills.map(s => s.canonical) : ["TypeScript", "React", "Node.js", "Docker", "AWS"],
+        rawText: resumeText,
+        atsExportDate: new Date().toISOString()
+      };
+
+      const blob = new Blob([JSON.stringify(jsonResume, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `resume-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("Downloaded JSON Resume!", "success");
+    });
+  }
+
+  function handlePaletteAction(id) {
+    if (id === "tab_ats") switchTab("ats-matcher");
+    else if (id === "tab_google") switchTab("google-copilot");
+    else if (id === "tab_amazon") switchTab("amazon-copilot");
+    else if (id === "tab_humanizer") switchTab("humanizer");
+    else if (id === "tab_linkedin") switchTab("linkedin-engine");
+    else if (id === "tab_profile") switchTab("profile-optimizer");
+    else if (id === "tab_tracker") switchTab("tracker");
+    else if (id === "tab_interview") switchTab("interview-coach");
+    else if (id === "action_run_ats") {
+      switchTab("ats-matcher");
+      runAtsAnalysis();
+    } else if (id === "action_run_google") {
+      switchTab("google-copilot");
+      runGoogleAudit();
+    } else if (id === "action_run_amazon") {
+      switchTab("amazon-copilot");
+      runAmazonAudit();
+    } else if (id === "action_toggle_theme") {
+      const toggle = document.getElementById("btn-toggle-theme");
+      if (toggle) toggle.click();
+    } else if (id === "action_print_pdf") {
+      openPrintModal();
+    } else if (id === "action_add_job") {
+      switchTab("tracker");
+      openJobModal();
+    }
+  }
 }

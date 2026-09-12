@@ -560,3 +560,102 @@ body {
     flex-wrap: wrap;
   }
 }
+
+/* ==========================================================================
+   ATS RESUME PRINT STYLESHEET (Single-Column Machine-Readable Format)
+   ========================================================================== */
+@media print {
+  @page {
+    margin: 0.55in;
+    size: letter;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+    font-size: 10.5pt !important;
+    line-height: 1.45 !important;
+  }
+
+  /* Hide all web application chrome during print */
+  .app-header,
+  .main-nav,
+  .action-bar-center,
+  .btn,
+  .matcher-grid,
+  .ats-results-card,
+  .modal-overlay,
+  .toast-container,
+  .app-footer,
+  #command-palette-modal,
+  .tab-content-panel {
+    display: none !important;
+  }
+
+  /* Expose only the printable ATS resume container */
+  #ats-resume-print-area {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .ats-print-header {
+    text-align: center;
+    margin-bottom: 1.25rem;
+    border-bottom: 2px solid #000;
+    padding-bottom: 0.75rem;
+  }
+
+  .ats-print-name {
+    font-size: 20pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+  }
+
+  .ats-print-contact {
+    font-size: 9.5pt;
+    color: #222;
+  }
+
+  .ats-print-section {
+    margin-bottom: 1.25rem;
+    page-break-inside: avoid;
+  }
+
+  .ats-print-section-title {
+    font-size: 12pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.75px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 0.2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .ats-print-job {
+    margin-bottom: 0.85rem;
+    page-break-inside: avoid;
+  }
+
+  .ats-print-job-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 10.5pt;
+  }
+
+  .ats-print-bullets {
+    margin: 0.35rem 0 0.5rem 1.25rem;
+    padding: 0;
+  }
+
+  .ats-print-bullets li {
+    margin-bottom: 0.35rem;
+    line-height: 1.4;
+  }
+}
