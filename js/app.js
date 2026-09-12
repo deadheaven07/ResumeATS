@@ -10,6 +10,7 @@ import { HOOK_FORMULAS, buildLinkedInPost, analyzePostStructure } from "./linked
 import { buildHeadline, buildAboutSection, PROFILE_AUDIT_ITEMS } from "./profile-builder.js";
 import { JobTracker, STAGES } from "./tracker.js";
 import { GeminiClient } from "./gemini-client.js";
+import { GOOGLE_JOB_PROFILES, auditGoogleAtsProfile, buildGoogleXyzBullet } from "./google-engine.js";
 
 // Initialize Subsystems
 const jobTracker = new JobTracker();
@@ -112,6 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   initTabs();
   initAtsMatcher();
+  initGoogleCopilot();
   initHumanizer();
   initLinkedInEngine();
   initProfileOptimizer();
@@ -982,4 +984,216 @@ function initSettingsModal() {
     modal.classList.remove("active");
     showToast("Settings saved!", "success");
   });
+}
+
+/* ==========================================================================
+   MODULE: GOOGLE CAREERS & PROFILE COPILOT LOGIC
+   ========================================================================== */
+function initGoogleCopilot() {
+  const roleSelectorGrid = document.getElementById("google-role-selector-grid");
+  const jdInput = document.getElementById("google-jd-input");
+  const resumeInput = document.getElementById("google-resume-input");
+  const levelBadge = document.getElementById("google-selected-level-badge");
+  const btnRunAudit = document.getElementById("btn-run-google-audit");
+  const btnLoadSample = document.getElementById("btn-load-google-sample");
+
+  // Render role selector cards
+  if (roleSelectorGrid) {
+    roleSelectorGrid.innerHTML = "";
+    GOOGLE_JOB_PROFILES.forEach((role, idx) => {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = `google-role-card ${idx === 0 ? "active" : ""}`;
+      card.setAttribute("data-id", role.id);
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.25rem;">
+          <strong style="font-size:0.86rem; color:var(--text-heading);">${role.title.split(" - ")[0]}</strong>
+          <span class="badge badge-neutral" style="font-size:0.68rem;">${role.level}</span>
+        </div>
+        <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.35;">${role.overview}</div>
+      `;
+
+      card.addEventListener("click", () => {
+        document.querySelectorAll(".google-role-card").forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
+        jdInput.value = role.requirements;
+        levelBadge.textContent = role.level;
+        showToast(`Loaded Google Rubric: ${role.title.split(" - ")[0]}`, "info");
+      });
+
+      roleSelectorGrid.appendChild(card);
+    });
+
+    // Default to first profile
+    if (GOOGLE_JOB_PROFILES[0]) {
+      jdInput.value = GOOGLE_JOB_PROFILES[0].requirements;
+      levelBadge.textContent = GOOGLE_JOB_PROFILES[0].level;
+    }
+  }
+
+  // Load Google Candidate Sample
+  const googleSampleResume = `Alex Chen
+Senior Software Engineer | High-Throughput Cloud Platforms
+Email: alex.chen@example.com | GitHub: github.com/alexchen-dev
+
+SUMMARY:
+Senior Systems Software Engineer with 7+ years of experience designing and scaling planetary-scale distributed microservices, fault-tolerant consensus layers, and high-concurrency cloud infrastructure in Go, C++, and Python. Proven track record leading multi-quarter technical initiatives and optimizing p99 latency for millions of users.
+
+PROFESSIONAL EXPERIENCE:
+Senior Distributed Systems Engineer | CloudMatrix (2023 - Present)
+- Accomplished 50,000 TPS ingestion throughput as measured by a 42% decrease in p99 API response times (from 84ms to 49ms), by architecting an event-driven Go and Kafka streaming architecture with distributed Redis caching.
+- Decreased infrastructure compute expenditures by $180,000 annually as measured by automated cluster utilization metrics, by refactoring monolithic services into containerized Kubernetes (K8s) deployments with predictive horizontal pod autoscaling.
+- Led technical design reviews across 4 cross-functional engineering teams, authoring architecture RFCs and mentoring 5 junior/mid-level engineers on distributed systems debugging and unit test standardization (88% branch coverage).
+- Decreased team production incident frequency by 54% as measured by postmortem SLA reports, by implementing automated canary deployments and OpenTelemetry Prometheus/Grafana observability.
+
+Software Engineer III | Apex FinTech (2020 - 2023)
+- Accomplished zero financial clearing transaction drops across 12M daily requests as measured by 99.999% system availability, by constructing fault-tolerant distributed transaction processors using Go, Python, and PostgreSQL.
+- Optimized database connection saturation by 40% as measured by PgBouncer pool metrics, by implementing connection pooling, query indexing, and asynchronous queue workers.
+
+TECHNICAL EXPERTISE:
+- Languages: Go (Golang), C++, Python, TypeScript, SQL
+- Distributed Systems: Microservices, System Design, Concurrency, Multithreading, Fault Tolerance, Scalability, High Availability
+- Infrastructure & Cloud: GCP (Google Cloud), Kubernetes (K8s), Docker, gRPC, Protocol Buffers, Kafka, CI/CD Pipelines, SRE`;
+
+  if (btnLoadSample) {
+    btnLoadSample.addEventListener("click", () => {
+      resumeInput.value = googleSampleResume;
+      showToast("Loaded Google L5 Senior candidate sample!", "success");
+      runGoogleAudit();
+    });
+  }
+
+  if (btnRunAudit) {
+    btnRunAudit.addEventListener("click", () => {
+      runGoogleAudit();
+    });
+  }
+
+  // Google XYZ Formula Rewriter Inputs
+  const xInput = document.getElementById("xyz-x-input");
+  const yInput = document.getElementById("xyz-y-input");
+  const zInput = document.getElementById("xyz-z-input");
+  const xyzOutput = document.getElementById("xyz-live-output");
+  const btnCopyXyz = document.getElementById("btn-copy-xyz");
+  const btnAppendXyz = document.getElementById("btn-append-xyz");
+
+  function updateXyzPreview() {
+    if (!xyzOutput) return;
+    const xVal = xInput ? xInput.value.trim() : "";
+    const yVal = yInput ? yInput.value.trim() : "";
+    const zVal = zInput ? zInput.value.trim() : "";
+
+    if (!xVal && !yVal && !zVal) {
+      xyzOutput.innerHTML = `Accomplished <span class="xyz-span-x">[X]</span> as measured by <span class="xyz-span-y">[Y]</span>, by <span class="xyz-span-z">[Z]</span>.`;
+      return;
+    }
+
+    xyzOutput.innerHTML = `Accomplished <span class="xyz-span-x">${xVal || "[X Result]"}</span> as measured by <span class="xyz-span-y">${yVal || "[Y Metric]"}</span>, by <span class="xyz-span-z">${zVal || "[Z Technical Implementation]"}</span>.`;
+  }
+
+  [xInput, yInput, zInput].forEach(inp => {
+    if (inp) inp.addEventListener("input", updateXyzPreview);
+  });
+
+  // Populate sample XYZ inputs initially
+  if (xInput && yInput && zInput) {
+    xInput.value = "accelerated payment transaction throughput to 50k TPS";
+    yInput.value = "a 42% decrease in p99 response times and zero message drops";
+    zInput.value = "architecting an event-driven Go and Kafka ingestion layer with distributed Redis caching";
+    updateXyzPreview();
+  }
+
+  if (btnCopyXyz) {
+    btnCopyXyz.addEventListener("click", () => {
+      const text = buildGoogleXyzBullet({
+        accomplishedX: xInput.value,
+        measuredY: yInput.value,
+        doingZ: zInput.value
+      });
+      if (!text) {
+        showToast("Fill in XYZ fields first", "warning");
+        return;
+      }
+      navigator.clipboard.writeText(text);
+      showToast("Google XYZ bullet copied to clipboard!", "success");
+    });
+  }
+
+  if (btnAppendXyz) {
+    btnAppendXyz.addEventListener("click", () => {
+      const text = buildGoogleXyzBullet({
+        accomplishedX: xInput.value,
+        measuredY: yInput.value,
+        doingZ: zInput.value
+      });
+      if (!text) {
+        showToast("Fill in XYZ fields first", "warning");
+        return;
+      }
+      resumeInput.value += `\n- ${text}`;
+      showToast("Appended to Google Resume!", "success");
+      runGoogleAudit();
+    });
+  }
+}
+
+function runGoogleAudit() {
+  const resumeText = document.getElementById("google-resume-input").value;
+  const jdText = document.getElementById("google-jd-input").value;
+
+  if (!resumeText.trim()) {
+    showToast("Please provide a resume to run the Google audit", "warning");
+    return;
+  }
+
+  const audit = auditGoogleAtsProfile(resumeText, jdText);
+
+  // Show results card
+  const resultsCard = document.getElementById("google-results-card");
+  resultsCard.classList.add("active");
+
+  // Animate circular gauge
+  const gaugeNumber = document.getElementById("google-gauge-score");
+  const gaugeCircle = document.getElementById("google-gauge-circle");
+  const gaugeTier = document.getElementById("google-tier-badge");
+  const levelBadge = document.getElementById("google-level-badge");
+
+  gaugeNumber.textContent = audit.googleAtsScore;
+  gaugeTier.textContent = audit.tier;
+  gaugeTier.style.color = audit.tierColor;
+  levelBadge.textContent = audit.levelEval.title;
+  levelBadge.className = `badge ${audit.levelEval.badgeClass}`;
+
+  const offset = 440 - (440 * audit.googleAtsScore) / 100;
+  gaugeCircle.style.strokeDashoffset = offset;
+  gaugeCircle.style.stroke = audit.tierColor;
+
+  // Update Dimensions
+  document.getElementById("score-dim-xyz").textContent = `${audit.dimensions.xyzDensity}%`;
+  document.getElementById("bar-dim-xyz").style.width = `${audit.dimensions.xyzDensity}%`;
+
+  document.getElementById("score-dim-rrk").textContent = `${audit.dimensions.rrk}%`;
+  document.getElementById("bar-dim-rrk").style.width = `${audit.dimensions.rrk}%`;
+
+  document.getElementById("score-dim-gca").textContent = `${audit.dimensions.gca}%`;
+  document.getElementById("bar-dim-gca").style.width = `${audit.dimensions.gca}%`;
+
+  document.getElementById("score-dim-lead").textContent = `${audit.dimensions.leadership}%`;
+  document.getElementById("bar-dim-lead").style.width = `${audit.dimensions.leadership}%`;
+
+  // Update Level Recommendations
+  document.getElementById("google-level-title").textContent = audit.levelEval.title;
+  document.getElementById("google-level-badge-pill").textContent = audit.levelEval.level >= "L5" ? "Senior Bar Met" : "Development Needed";
+  document.getElementById("google-level-badge-pill").className = `badge ${audit.levelEval.badgeClass}`;
+  document.getElementById("google-level-summary").textContent = audit.levelEval.summary;
+
+  const recsList = document.getElementById("google-level-recs");
+  recsList.innerHTML = "";
+  audit.levelEval.recommendations.forEach(r => {
+    const li = document.createElement("li");
+    li.textContent = r;
+    recsList.appendChild(li);
+  });
+
+  showToast(`Google Audit Complete: ${audit.googleAtsScore}% (${audit.levelEval.level} Scope)`, "success");
 }

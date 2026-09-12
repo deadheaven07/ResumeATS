@@ -12,7 +12,13 @@ A modern, high-performance web application designed for professionals to optimiz
 - **Gap Analysis:** Identifies verified canonical matches vs missing critical keywords.
 - **STAR Method Rewriter:** Interactive generator for `[Action Verb] + [Context/Problem] + [Quantifiable Outcome]` with dynamic non-slop verbs and 1-click append.
 
-### 2. Module 2: Anti-AI Humanizer Engine
+### 2. Module 2: Google Careers & Profile Copilot (Laszlo Bock XYZ Standard)
+- **Google ATS Rubric & Scoring:** Benchmarked against Google's 4 hiring pillars: General Cognitive Ability (GCA), Role-Related Knowledge (RRK), Leadership, and Googleyness.
+- **Google XYZ Formula Rewriter:** Interactive builder for Google's gold-standard `Accomplished [X] as measured by [Y], by doing [Z]` structure.
+- **Engineering Level Evaluator (L3/L4/L5/L6):** Analyzes resume scope to diagnose Google leveling alignment with a concrete roadmap to hit the L5 Senior SWE bar.
+- **Curated Google Role Rubrics:** 1-click evaluation against Google SWE (Distributed Systems & Cloud), Google ML/AI SWE, and Google Site Reliability Engineer (SRE).
+
+### 3. Module 3: Anti-AI Humanizer Engine
 - **Live Slop Detector:** Real-time linter flagging banned AI buzzwords (*delve*, *leverage*, *supercharge*, *game-changer*, *spearhead*, *testaments*, *beacon*, *tapestry*, *key takeaway*, *excited to announce*, *in today's fast-paced world*).
 - **Readability Calculator:** Coleman-Liau & Flesch-Kincaid formula targeting an 8th–10th grade conversational level.
 - **Formatting Enforcer:**

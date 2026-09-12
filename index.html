@@ -46,6 +46,11 @@
           </button>
         </li>
         <li role="presentation">
+          <button class="nav-tab-btn" role="tab" aria-selected="false" data-tab="google-copilot" id="tab-google-copilot">
+            <span>🇬</span> Google Copilot <span class="tab-badge" style="background:rgba(26,115,232,0.12); color:#1a73e8; font-weight:700;">XYZ Standard</span>
+          </button>
+        </li>
+        <li role="presentation">
           <button class="nav-tab-btn" role="tab" aria-selected="false" data-tab="humanizer" id="tab-humanizer">
             <span>🛡️</span> Anti-AI Humanizer <span class="tab-badge">Module 2</span>
           </button>
@@ -181,6 +186,196 @@
         </div>
       </div>
     </main>
+
+    <!-- TAB: GOOGLE CAREERS & PROFILE COPILOT -->
+    <section id="panel-google-copilot" class="tab-content-panel" role="tabpanel" aria-labelledby="tab-google-copilot">
+      <!-- Target Google Role Selection -->
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title"><span>🇬</span> Select Target Google Engineering Role & Rubric</h3>
+            <p class="card-subtitle">Benchmarked against Google's 4 core hiring dimensions: GCA, RRK, Leadership, and Googleyness.</p>
+          </div>
+          <span class="google-brand-badge">Google L4/L5/L6</span>
+        </div>
+
+        <div class="google-role-selector-grid" id="google-role-selector-grid"></div>
+      </div>
+
+      <!-- Split Inputs -->
+      <div class="matcher-grid">
+        <!-- Resume Input -->
+        <div class="glass-card">
+          <div class="input-panel-header">
+            <h3 class="card-title"><span>📄</span> Candidate Profile / Resume</h3>
+            <button id="btn-load-google-sample" class="sample-toggle-btn">Load Google Candidate Sample</button>
+          </div>
+          <p class="card-subtitle" style="margin-bottom: 0.75rem;">Google evaluates experience through the Laszlo Bock XYZ framework and metric density.</p>
+          <textarea id="google-resume-input" class="form-textarea" placeholder="Paste your resume markdown, bullet points, or experience here..."></textarea>
+        </div>
+
+        <!-- Target Google JD Requirements -->
+        <div class="glass-card">
+          <div class="input-panel-header">
+            <h3 class="card-title"><span>💼</span> Google Job Requirements</h3>
+            <span class="badge badge-neutral" id="google-selected-level-badge">L5 (Senior)</span>
+          </div>
+          <p class="card-subtitle" style="margin-bottom: 0.75rem;">Official Google qualifications and preferred competencies for this technical track.</p>
+          <textarea id="google-jd-input" class="form-textarea" placeholder="Google job requirements will populate here when you select a role above, or paste a custom one..."></textarea>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <div class="action-bar-center">
+        <button id="btn-run-google-audit" class="btn btn-primary btn-analyze-pulse" style="background: linear-gradient(135deg, #1a73e8 0%, #34a853 100%);">
+          <span>🇬 Run Google Technical Profile Audit</span>
+        </button>
+      </div>
+
+      <!-- Google Audit Results Card -->
+      <div id="google-results-card" class="glass-card ats-results-card">
+        <div class="card-header">
+          <h3 class="card-title"><span>📊</span> Google ATS Score & Level Competency Assessment</h3>
+          <span id="google-level-badge" class="badge badge-success">Evaluating...</span>
+        </div>
+
+        <div class="ats-dashboard-layout">
+          <!-- Circular Gauge -->
+          <div class="ats-gauge-container">
+            <div class="circular-gauge">
+              <svg viewBox="0 0 160 160">
+                <circle class="gauge-bg" cx="80" cy="80" r="70"></circle>
+                <circle id="google-gauge-circle" class="gauge-progress" cx="80" cy="80" r="70" style="stroke:#1a73e8;"></circle>
+              </svg>
+              <div class="gauge-text">
+                <div id="google-gauge-score" class="gauge-number">0</div>
+                <div class="gauge-label">Google ATS</div>
+              </div>
+            </div>
+            <div id="google-tier-badge" class="badge badge-success gauge-tier-badge">Evaluating...</div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.75rem; text-align:center;">
+              Weighted by Google XYZ metric density & technical scale
+            </div>
+          </div>
+
+          <!-- Dimension Breakdown -->
+          <div>
+            <h4 style="font-size:0.9rem; font-weight:700; color:var(--text-heading); margin-bottom:0.75rem;">
+              Google 4-Pillar Evaluation Rubric:
+            </h4>
+            <div class="google-dimensions-grid">
+              <!-- Dimension 1: XYZ Metric Density -->
+              <div class="google-dimension-card">
+                <div class="dimension-header">
+                  <span class="dimension-title">XYZ Metric Density (35%)</span>
+                  <span id="score-dim-xyz" class="badge badge-neutral">0%</span>
+                </div>
+                <div class="dimension-bar-track">
+                  <div id="bar-dim-xyz" class="dimension-bar-fill" style="width:0%; background:#1a73e8;"></div>
+                </div>
+                <small style="font-size:0.72rem; color:var(--text-muted); margin-top:0.35rem; display:block;">
+                  Bullets containing hard numbers, %, ms latency, or TPS
+                </small>
+              </div>
+
+              <!-- Dimension 2: Role-Related Knowledge (RRK) -->
+              <div class="google-dimension-card">
+                <div class="dimension-header">
+                  <span class="dimension-title">Role-Related Knowledge (30%)</span>
+                  <span id="score-dim-rrk" class="badge badge-neutral">0%</span>
+                </div>
+                <div class="dimension-bar-track">
+                  <div id="bar-dim-rrk" class="dimension-bar-fill" style="width:0%; background:#059669;"></div>
+                </div>
+                <small style="font-size:0.72rem; color:var(--text-muted); margin-top:0.35rem; display:block;">
+                  Distributed systems, algorithms, scale, and cloud primitives
+                </small>
+              </div>
+
+              <!-- Dimension 3: General Cognitive Ability (GCA) -->
+              <div class="google-dimension-card">
+                <div class="dimension-header">
+                  <span class="dimension-title">General Cognitive Ability (20%)</span>
+                  <span id="score-dim-gca" class="badge badge-neutral">0%</span>
+                </div>
+                <div class="dimension-bar-track">
+                  <div id="bar-dim-gca" class="dimension-bar-fill" style="width:0%; background:#d97706;"></div>
+                </div>
+                <small style="font-size:0.72rem; color:var(--text-muted); margin-top:0.35rem; display:block;">
+                  Bottleneck diagnosis, latency optimization & system refactoring
+                </small>
+              </div>
+
+              <!-- Dimension 4: Leadership & Googleyness -->
+              <div class="google-dimension-card">
+                <div class="dimension-header">
+                  <span class="dimension-title">Leadership & Googleyness (15%)</span>
+                  <span id="score-dim-lead" class="badge badge-neutral">0%</span>
+                </div>
+                <div class="dimension-bar-track">
+                  <div id="bar-dim-lead" class="dimension-bar-fill" style="width:0%; background:#7c3aed;"></div>
+                </div>
+                <small style="font-size:0.72rem; color:var(--text-muted); margin-top:0.35rem; display:block;">
+                  Cross-functional consensus, mentorship, postmortems & culture
+                </small>
+              </div>
+            </div>
+
+            <!-- Engineering Level Recommendation -->
+            <div id="google-level-roadmap-card" style="margin-top:1rem; background:var(--bg-elevated); border:1px solid var(--border-card); border-radius:var(--radius-md); padding:1rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong style="font-size:0.86rem; color:var(--text-heading);">Level Assessment: <span id="google-level-title" style="color:var(--accent-primary);">L5 (Senior SWE)</span></strong>
+                <span id="google-level-badge-pill" class="badge badge-success">Target Bar Met</span>
+              </div>
+              <p id="google-level-summary" style="font-size:0.82rem; color:var(--text-secondary); margin-top:0.35rem; line-height:1.45;"></p>
+              <ul id="google-level-recs" style="font-size:0.78rem; color:var(--text-muted); margin-top:0.5rem; padding-left:1.2rem; line-height:1.45;"></ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Google Laszlo Bock XYZ Formula Rewriter -->
+        <div class="glass-card google-xyz-card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title"><span>🇬</span> Google XYZ Formula Resume Bullet Rewriter</h3>
+              <p class="card-subtitle">Laszlo Bock (Google SVP) Gold Standard: <code>Accomplished [X] as measured by [Y], by doing [Z]</code></p>
+            </div>
+            <span class="badge badge-neutral">Google Engineering Standard</span>
+          </div>
+
+          <div class="xyz-formula-breakdown">
+            <div class="form-group">
+              <label class="form-label" style="color:#1a73e8;"><span class="badge xyz-tag-x">[X] Accomplished Result</span> What goal did you achieve?</label>
+              <input type="text" id="xyz-x-input" class="form-control" placeholder="e.g. accelerated payment ingestion pipeline throughput to 50k TPS">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" style="color:#1e7e34;"><span class="badge xyz-tag-y">[Y] Measured Impact</span> By what specific metric (%, ms latency, $, users)?</label>
+              <input type="text" id="xyz-y-input" class="form-control" placeholder="e.g. a 42% decrease in p99 response times and zero transaction drops">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" style="color:#7c3aed;"><span class="badge xyz-tag-z">[Z] By Doing What</span> What architecture, algorithm, or technical implementation did you execute?</label>
+              <input type="text" id="xyz-z-input" class="form-control" placeholder="e.g. architecting an event-driven Go and Kafka streaming layer with distributed Redis caching">
+            </div>
+          </div>
+
+          <div class="xyz-component-preview">
+            <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.4rem;">
+              Live Google-Formatted XYZ Statement:
+            </div>
+            <div id="xyz-live-output" style="font-size:0.96rem; font-weight:500; color:var(--text-main); line-height:1.6;">
+              Accomplished <span class="xyz-span-x">[X]</span> as measured by <span class="xyz-span-y">[Y]</span>, by <span class="xyz-span-z">[Z]</span>.
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1rem;">
+            <button id="btn-copy-xyz" class="btn btn-secondary btn-sm">Copy Google XYZ Bullet</button>
+            <button id="btn-append-xyz" class="btn btn-success btn-sm">+ Append to Google Resume</button>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- TAB 2: ANTI-AI HUMANIZER ENGINE -->
     <section id="panel-humanizer" class="tab-content-panel" role="tabpanel" aria-labelledby="tab-humanizer">
