@@ -156,10 +156,17 @@
       </div>
 
       <!-- ATS Results Dashboard -->
-      <div id="ats-results-card" class="glass-card ats-results-card">
         <div class="card-header">
           <h3 class="card-title"><span>📊</span> ATS Match & Canonical Gap Report</h3>
-          <span id="ats-gauge-tier" class="badge badge-success">Match Complete</span>
+          <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+            <button type="button" id="btn-open-autotune-diff" class="btn btn-secondary btn-sm" title="Weave missing keywords into existing bullets with before/after diff">
+              <span>⚡</span> Auto-Tune Bullets (Diff)
+            </button>
+            <button type="button" id="btn-open-outreach-kit" class="btn btn-secondary btn-sm" title="Generate tailored recruiter pitches and cold emails">
+              <span>✉️</span> Outreach Pitch Kit
+            </button>
+            <span id="ats-gauge-tier" class="badge badge-success">Match Complete</span>
+          </div>
         </div>
 
         <div class="ats-dashboard-layout">
@@ -1234,6 +1241,15 @@
         Single-column clean hierarchy optimized for 100% parsing success across Workday, Greenhouse, Lever, and Taleo.
       </p>
 
+      <!-- 1-Page Resume Budget Meter -->
+      <div id="page-budget-meter" class="page-budget-meter">
+        <div class="page-budget-status">
+          <span>📄 Printable Budget:</span>
+          <span id="page-budget-badge" class="badge badge-success">Optimal 1-Page</span>
+        </div>
+        <div id="page-budget-message" style="font-size:0.75rem; color:var(--text-muted);">Fits cleanly on 1 page (42 / 48 lines).</div>
+      </div>
+
       <div id="ats-print-preview-body" style="background:#fff; color:#000; padding:1.5rem; border:1px solid #ddd; border-radius:6px; max-height:420px; overflow-y:auto; font-family:-apple-system, BlinkMacSystemFont, Arial, sans-serif; font-size:10pt; line-height:1.45;">
       </div>
 
@@ -1244,6 +1260,52 @@
           <button id="btn-trigger-print" class="btn btn-primary btn-sm">🖨️ Open Print to PDF Dialog</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- SIDE-BY-SIDE AUTO-TUNER DIFF MODAL -->
+  <div id="resume-diff-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width:860px;">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title"><span>⚡</span> Smart Resume Auto-Tuner & Side-by-Side Diff</h3>
+          <p class="card-subtitle">Weaves missing canonical JD keywords into existing bullets with before/after visual diffs.</p>
+        </div>
+        <button id="btn-close-diff-modal" class="card-icon-btn" style="width:30px; height:30px;">✕</button>
+      </div>
+
+      <div id="diff-cards-list" class="diff-split-container"></div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.25rem; flex-wrap:wrap; gap:0.75rem;">
+        <span style="font-size:0.75rem; color:var(--text-muted);">Green text indicates added canonical skills. Approved bullets will replace original resume text.</span>
+        <div style="display:flex; gap:0.5rem;">
+          <button id="btn-reject-all-diffs" class="btn btn-secondary btn-sm">Reset All</button>
+          <button id="btn-apply-all-diffs" class="btn btn-primary btn-sm">✓ Apply Approved Bullets to Resume</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLD OUTREACH & RECRUITER PITCH MODAL -->
+  <div id="outreach-pitch-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width:820px;">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title"><span>✉️</span> Recruiter & Hiring Manager Outreach Kit</h3>
+          <p class="card-subtitle">Concise, humanized pitches grounded in your verified skills. 100% compliant with the Anti-AI Humanizer.</p>
+        </div>
+        <button id="btn-close-outreach-modal" class="card-icon-btn" style="width:30px; height:30px;">✕</button>
+      </div>
+
+      <!-- Tone Selector -->
+      <div class="outreach-tone-selector">
+        <span style="font-size:0.78rem; font-weight:700; color:var(--text-muted); align-self:center; margin-right:0.25rem;">Select Tone:</span>
+        <button class="outreach-tone-btn active" data-tone="operator">⚡ High-Output Operator</button>
+        <button class="outreach-tone-btn" data-tone="specialist">🏛️ Thoughtful Specialist</button>
+        <button class="outreach-tone-btn" data-tone="craftsman">🛠️ Humble Builder</button>
+      </div>
+
+      <div id="outreach-templates-list" class="outreach-cards-container"></div>
     </div>
   </div>
 

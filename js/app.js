@@ -3,7 +3,7 @@
  * Main Application Orchestrator
  */
 
-import { analyzeAtsMatch, buildStarBullet, generateStarDraftsForSkill, generateResumeHeatmapHtml, generateAtsPrintHtml } from "./ats-matcher.js";
+import { analyzeAtsMatch, buildStarBullet, generateStarDraftsForSkill, generateResumeHeatmapHtml, generateAtsPrintHtml, calculateResumePageBudget } from "./ats-matcher.js";
 import { STAR_ACTION_VERBS } from "./taxonomy.js";
 import { auditContent, humanizeText, calculateReadability, BANNED_PATTERNS } from "./humanizer.js";
 import { HOOK_FORMULAS, buildLinkedInPost, analyzePostStructure } from "./linkedin-engine.js";
@@ -15,6 +15,8 @@ import { setupDropzone } from "./file-parser.js";
 import { auditAmazonLeadershipPrinciples, buildAmazonStarBullet, AMAZON_JOB_PROFILES, AMAZON_LEADERSHIP_PRINCIPLES } from "./amazon-engine.js";
 import { generateInterviewQuestions } from "./interview-coach.js";
 import { setupCommandPalette } from "./command-palette.js";
+import { generateAutoTuneDiffs, applyApprovedDiffs } from "./diff-engine.js";
+import { generateOutreachKit, OUTREACH_TONES } from "./outreach-engine.js";
 
 // Initialize Subsystems
 const jobTracker = new JobTracker();
@@ -42,6 +44,41 @@ export function showToast(message, type = "info") {
     toast.style.transition = "all 0.3s ease";
     setTimeout(() => toast.remove(), 300);
   }, 3200);
+}
+
+// Dynamic Ambient Radial Scorecard Glow
+export function applyGaugeGlow(containerEl, score) {
+  if (!containerEl) return;
+  containerEl.classList.remove("glow-emerald", "glow-amber", "glow-rose");
+  if (score >= 80) {
+    containerEl.classList.add("glow-emerald");
+  } else if (score >= 60) {
+    containerEl.classList.add("glow-amber");
+  } else {
+    containerEl.classList.add("glow-rose");
+  }
+}
+
+// Linear Counter Rollup Animation (Cubic Ease Out)
+export function animateNumber(element, start, end, duration = 900) {
+  if (!element) return;
+  const startTime = performance.now();
+  const startNum = Number(start) || 0;
+  const endNum = Number(end) || 0;
+
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const easeOut = 1 - Math.pow(1 - progress, 3);
+    const currentVal = Math.round(startNum + (endNum - startNum) * easeOut);
+    element.textContent = currentVal;
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      element.textContent = endNum;
+    }
+  }
+  requestAnimationFrame(update);
 }
 
 // Global Application State
@@ -127,6 +164,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initSettingsModal();
   initCommandPaletteAndExport();
   initSideDrawer();
+  initAutoTunerModal();
+  initOutreachModal();
 });
 
 function initTheme() {
@@ -334,12 +373,15 @@ function runAtsAnalysis() {
   const scorecard = document.getElementById("ats-results-card");
   scorecard.classList.add("active");
 
-  // Animate circular gauge
+  // Animate circular gauge with counter rollup and ambient glow
   const gaugeNumber = document.getElementById("ats-gauge-score");
   const gaugeProgress = document.getElementById("ats-gauge-circle");
   const gaugeTier = document.getElementById("ats-gauge-tier");
+  const gaugeContainer = scorecard.querySelector(".ats-gauge-container");
 
-  gaugeNumber.textContent = analysis.score;
+  animateNumber(gaugeNumber, 0, analysis.score, 900);
+  applyGaugeGlow(gaugeContainer, analysis.score);
+
   gaugeTier.textContent = analysis.statusTier;
   gaugeTier.className = `badge ${analysis.score >= 80 ? "badge-success" : analysis.score >= 60 ? "badge-warning" : "badge-danger"}`;
 
@@ -1355,13 +1397,16 @@ function runGoogleAudit() {
   const resultsCard = document.getElementById("google-results-card");
   resultsCard.classList.add("active");
 
-  // Animate circular gauge
+  // Animate circular gauge with counter rollup and ambient glow
   const gaugeNumber = document.getElementById("google-gauge-score");
   const gaugeCircle = document.getElementById("google-gauge-circle");
   const gaugeTier = document.getElementById("google-tier-badge");
   const levelBadge = document.getElementById("google-level-badge");
+  const gaugeContainer = resultsCard.querySelector(".ats-gauge-container");
 
-  gaugeNumber.textContent = audit.googleAtsScore;
+  animateNumber(gaugeNumber, 0, audit.googleAtsScore, 900);
+  applyGaugeGlow(gaugeContainer, audit.googleAtsScore);
+
   gaugeTier.textContent = audit.tier;
   gaugeTier.style.color = audit.tierColor;
   levelBadge.textContent = audit.levelEval.title;
@@ -1588,13 +1633,16 @@ function runAmazonAudit() {
   const resultsCard = document.getElementById("amazon-results-card");
   if (resultsCard) resultsCard.classList.add("active");
 
-  // Animate circular gauge
+  // Animate circular gauge with counter rollup and ambient glow
   const gaugeNumber = document.getElementById("amazon-gauge-score");
   const gaugeCircle = document.getElementById("amazon-gauge-circle");
   const gaugeTier = document.getElementById("amazon-tier-badge");
   const lpBadge = document.getElementById("amazon-lp-badge");
+  const gaugeContainer = resultsCard ? resultsCard.querySelector(".ats-gauge-container") : null;
 
-  if (gaugeNumber) gaugeNumber.textContent = audit.amazonScore;
+  if (gaugeNumber) animateNumber(gaugeNumber, 0, audit.amazonScore, 900);
+  if (gaugeContainer) applyGaugeGlow(gaugeContainer, audit.amazonScore);
+
   if (gaugeTier) {
     gaugeTier.textContent = audit.tier;
     gaugeTier.style.color = audit.tierColor;
@@ -1776,6 +1824,19 @@ function initCommandPaletteAndExport() {
     const printHtml = generateAtsPrintHtml(resumeText);
     previewBody.innerHTML = printHtml;
     if (printArea) printArea.innerHTML = printHtml;
+
+    // 1-Page Print Budget Estimator & Warning Meter
+    const budget = calculateResumePageBudget(resumeText);
+    const budgetBadge = document.getElementById("page-budget-badge");
+    const budgetMsg = document.getElementById("page-budget-message");
+    if (budgetBadge) {
+      budgetBadge.textContent = budget.status;
+      budgetBadge.className = `badge ${budget.badgeClass}`;
+    }
+    if (budgetMsg) {
+      budgetMsg.textContent = budget.message;
+    }
+
     printModal.classList.add("active");
   }
 
@@ -1988,3 +2049,277 @@ function initSideDrawer() {
     });
   }
 }
+
+/* ==========================================================================
+   MODULE: SMART RESUME AUTO-TUNER & SIDE-BY-SIDE DIFF MODAL
+   ========================================================================== */
+function initAutoTunerModal() {
+  const modal = document.getElementById("resume-diff-modal");
+  const btnOpen = document.getElementById("btn-open-autotune-diff");
+  const btnClose = document.getElementById("btn-close-diff-modal");
+  const diffsContainer = document.getElementById("diff-cards-list");
+  const btnApplyAll = document.getElementById("btn-apply-all-diffs");
+  const btnRejectAll = document.getElementById("btn-reject-all-diffs");
+
+  let activeDiffList = [];
+
+  function openModal() {
+    const resumeInput = document.getElementById("ats-resume-input");
+    const resumeText = resumeInput?.value || "";
+
+    if (!resumeText.trim()) {
+      showToast("Please enter or load a resume first", "warning");
+      return;
+    }
+
+    const missingSkills = (state.activeAtsAnalysis && state.activeAtsAnalysis.missingSkills)
+      ? state.activeAtsAnalysis.missingSkills
+      : ["Kubernetes", "AWS", "TypeScript", "Redis"];
+
+    activeDiffList = generateAutoTuneDiffs(resumeText, missingSkills);
+    renderDiffCards();
+    modal.classList.add("active");
+  }
+
+  function closeModal() {
+    modal.classList.remove("active");
+  }
+
+  function renderDiffCards() {
+    if (!diffsContainer) return;
+    diffsContainer.innerHTML = "";
+
+    if (activeDiffList.length === 0) {
+      diffsContainer.innerHTML = `
+        <div style="text-align:center; padding:2rem; color:var(--text-muted);">
+          <p style="font-size:1.1rem; font-weight:600;">✨ No critical gaps detected!</p>
+          <p style="font-size:0.85rem;">All target canonical skills were found in your resume or no skills to weave.</p>
+        </div>
+      `;
+      return;
+    }
+
+    activeDiffList.forEach((diff, idx) => {
+      const card = document.createElement("div");
+      card.className = "diff-item-card";
+      card.innerHTML = `
+        <div class="diff-item-header">
+          <span class="diff-skill-badge"><span>Target Skill:</span> <strong>${diff.skill}</strong></span>
+          <div class="diff-action-buttons">
+            <button class="diff-action-btn btn-accept ${diff.accepted ? "active" : ""}" data-idx="${idx}">
+              ${diff.accepted ? "✓ Accepted" : "Accept"}
+            </button>
+            <button class="diff-action-btn btn-reject ${!diff.accepted ? "active" : ""}" data-idx="${idx}">
+              ${!diff.accepted ? "✕ Rejected" : "Reject"}
+            </button>
+          </div>
+        </div>
+        <div class="diff-columns-wrapper">
+          <div class="diff-pane original">
+            <div class="diff-pane-label">Original Experience Bullet</div>
+            <div class="diff-pane-content">• ${diff.originalText}</div>
+          </div>
+          <div class="diff-pane tailored">
+            <div class="diff-pane-label">Tailored Bullet with Canonical Metric</div>
+            <div class="diff-pane-content">• ${diff.diffHtml}</div>
+          </div>
+        </div>
+      `;
+
+      // Accept / Reject event listeners
+      const acceptBtn = card.querySelector(".btn-accept");
+      const rejectBtn = card.querySelector(".btn-reject");
+
+      acceptBtn.addEventListener("click", () => {
+        diff.accepted = true;
+        acceptBtn.classList.add("active");
+        acceptBtn.textContent = "✓ Accepted";
+        rejectBtn.classList.remove("active");
+        rejectBtn.textContent = "Reject";
+      });
+
+      rejectBtn.addEventListener("click", () => {
+        diff.accepted = false;
+        rejectBtn.classList.add("active");
+        rejectBtn.textContent = "✕ Rejected";
+        acceptBtn.classList.remove("active");
+        acceptBtn.textContent = "Accept";
+      });
+
+      diffsContainer.appendChild(card);
+    });
+  }
+
+  if (btnOpen) btnOpen.addEventListener("click", openModal);
+  if (btnClose) btnClose.addEventListener("click", closeModal);
+
+  if (modal) {
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeModal();
+    });
+  }
+
+  if (btnRejectAll) {
+    btnRejectAll.addEventListener("click", () => {
+      activeDiffList.forEach(d => { d.accepted = false; });
+      renderDiffCards();
+      showToast("Reset all recommendations to rejected", "info");
+    });
+  }
+
+  if (btnApplyAll) {
+    btnApplyAll.addEventListener("click", () => {
+      const acceptedCount = activeDiffList.filter(d => d.accepted).length;
+      if (acceptedCount === 0) {
+        showToast("No bullets accepted to apply", "warning");
+        return;
+      }
+
+      const resumeInput = document.getElementById("ats-resume-input");
+      const currentResume = resumeInput.value;
+      const updatedResume = applyApprovedDiffs(currentResume, activeDiffList);
+
+      resumeInput.value = updatedResume;
+      closeModal();
+      showToast(`Applied ${acceptedCount} tailored bullet(s) to resume!`, "success");
+      runAtsAnalysis();
+    });
+  }
+}
+
+/* ==========================================================================
+   MODULE: RECRUITER & HIRING MANAGER OUTREACH PITCH KIT
+   ========================================================================== */
+function initOutreachModal() {
+  const modal = document.getElementById("outreach-pitch-modal");
+  const btnOpen = document.getElementById("btn-open-outreach-kit");
+  const btnClose = document.getElementById("btn-close-outreach-modal");
+  const toneBtns = document.querySelectorAll(".outreach-tone-btn");
+  const templatesContainer = document.getElementById("outreach-templates-list");
+
+  let currentTone = "operator";
+
+  function getOutreachContext() {
+    const jdText = document.getElementById("ats-jd-input")?.value || "";
+    const resumeText = document.getElementById("ats-resume-input")?.value || "";
+
+    // Candidate Name from resume first line
+    const firstLine = resumeText.split("\n")[0]?.trim() || "Alex Chen";
+    const candidateName = firstLine.length < 35 && !firstLine.includes(":") ? firstLine : "Alex Chen";
+
+    // Target Company & Role detection from JD
+    let targetCompany = "Target Company";
+    let targetRole = "Senior Software Engineer";
+
+    if (jdText) {
+      const companyMatch = jdText.match(/(?:at|for|with|about)\s+([A-Z][A-Za-z0-9\s&]{2,20})/);
+      if (companyMatch) targetCompany = companyMatch[1].trim();
+
+      const roleMatch = jdText.match(/(?:Role|Position|Title):\s*([^\n]+)/i) || jdText.match(/Senior [A-Za-z\s]+ Engineer/i);
+      if (roleMatch) targetRole = (roleMatch[1] || roleMatch[0]).trim();
+    }
+
+    const matchedSkills = (state.activeAtsAnalysis && state.activeAtsAnalysis.matchedSkills && state.activeAtsAnalysis.matchedSkills.length > 0)
+      ? state.activeAtsAnalysis.matchedSkills.map(s => s.canonical)
+      : ["Distributed Systems", "Cloud Platforms", "TypeScript"];
+
+    return {
+      candidateName,
+      targetCompany,
+      targetRole,
+      matchedSkills,
+      tone: currentTone
+    };
+  }
+
+  function renderTemplates() {
+    if (!templatesContainer) return;
+    const ctx = getOutreachContext();
+    const kit = generateOutreachKit(ctx);
+
+    templatesContainer.innerHTML = "";
+
+    const templates = [
+      {
+        id: "direct_pitch",
+        badge: "75-Word Direct Pitch",
+        title: "Cold Email to Hiring Manager / Engineering Director",
+        sub: "Straight to the point with quantified proof points. Zero corporate filler.",
+        content: kit.directPitch
+      },
+      {
+        id: "warm_referral",
+        badge: "LinkedIn 1-on-1 Message",
+        title: "Warm Referral & Peer Connection Request",
+        sub: "Respectful, low-friction message to current engineers on the team.",
+        content: kit.referralRequest
+      },
+      {
+        id: "interview_followup",
+        badge: "Post-Interview Message",
+        title: "Technical Interview Thank-You & Value Anchor",
+        sub: "Anchors to technical depth and system trade-offs discussed in the round.",
+        content: kit.interviewThankYou
+      }
+    ];
+
+    templates.forEach(t => {
+      const card = document.createElement("div");
+      card.className = "outreach-template-card";
+      card.innerHTML = `
+        <div class="outreach-template-header">
+          <div>
+            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;">
+              <span class="outreach-template-badge">${t.badge}</span>
+              <strong style="font-size:0.88rem; color:var(--text-primary);">${t.title}</strong>
+            </div>
+            <p style="font-size:0.75rem; color:var(--text-muted); margin:0;">${t.sub}</p>
+          </div>
+          <button class="btn btn-secondary btn-sm btn-copy-outreach" title="Copy to clipboard">
+            📋 Copy Pitch
+          </button>
+        </div>
+        <div class="outreach-template-body">${escapeHtml(t.content)}</div>
+      `;
+
+      card.querySelector(".btn-copy-outreach").addEventListener("click", () => {
+        navigator.clipboard.writeText(t.content);
+        showToast(`Copied ${t.badge} to clipboard!`, "success");
+      });
+
+      templatesContainer.appendChild(card);
+    });
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function openModal() {
+    renderTemplates();
+    modal.classList.add("active");
+  }
+
+  function closeModal() {
+    modal.classList.remove("active");
+  }
+
+  if (btnOpen) btnOpen.addEventListener("click", openModal);
+  if (btnClose) btnClose.addEventListener("click", closeModal);
+
+  if (modal) {
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeModal();
+    });
+  }
+
+  toneBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      toneBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentTone = btn.getAttribute("data-tone") || "operator";
+      renderTemplates();
+    });
+  });
+}
+

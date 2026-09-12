@@ -252,3 +252,80 @@ export function generateAtsPrintHtml(resumeText) {
     </div>
   `;
 }
+
+/**
+ * Calculates print page budget and line overflow warning
+ */
+export function calculateResumePageBudget(resumeText) {
+  if (!resumeText || !resumeText.trim()) {
+    return {
+      lineCount: 0,
+      bulletCount: 0,
+      pageEstimate: 0,
+      status: "Empty",
+      message: "No resume text provided",
+      badgeClass: "badge-neutral"
+    };
+  }
+
+  const rawLines = resumeText.split("\n").map(l => l.trim()).filter(Boolean);
+  let effectiveLines = 0;
+  let bulletCount = 0;
+
+  rawLines.forEach(line => {
+    if (line.startsWith("-") || line.startsWith("•") || line.startsWith("*")) {
+      bulletCount++;
+      // Long bullets wrap to 2 or 3 lines on letter page with standard margins
+      effectiveLines += Math.max(1, Math.ceil(line.length / 85));
+    } else if (/^[A-Z\s]{4,25}:?$/.test(line) || /^(summary|experience|skills|education):?$/i.test(line)) {
+      effectiveLines += 2; // Header + spacing
+    } else {
+      effectiveLines += Math.max(1, Math.ceil(line.length / 90));
+    }
+  });
+
+  // Standard ATS 1-page budget threshold: ~44-48 effective print lines
+  const MAX_ONE_PAGE = 48;
+  const MAX_TWO_PAGE = 96;
+
+  if (effectiveLines <= MAX_ONE_PAGE) {
+    const remaining = MAX_ONE_PAGE - effectiveLines;
+    return {
+      lineCount: effectiveLines,
+      bulletCount,
+      pageEstimate: 1,
+      status: "Optimal 1-Page Layout",
+      message: `Fits cleanly on 1 page (${effectiveLines} / ${MAX_ONE_PAGE} lines. ${remaining} lines of budget left).`,
+      badgeClass: "badge-success"
+    };
+  } else if (effectiveLines <= MAX_ONE_PAGE + 8) {
+    const overflow = effectiveLines - MAX_ONE_PAGE;
+    return {
+      lineCount: effectiveLines,
+      bulletCount,
+      pageEstimate: 1.2,
+      status: "Minor Spill Risk",
+      message: `⚠️ Spilling ${overflow} lines onto a 2nd page! Tighten 1-2 bullets to fit cleanly on 1 page.`,
+      badgeClass: "badge-warning"
+    };
+  } else if (effectiveLines <= MAX_TWO_PAGE) {
+    return {
+      lineCount: effectiveLines,
+      bulletCount,
+      pageEstimate: 2,
+      status: "Solid 2-Page Layout",
+      message: `Clean 2-page senior executive layout (${effectiveLines} lines).`,
+      badgeClass: "badge-cyan"
+    };
+  } else {
+    return {
+      lineCount: effectiveLines,
+      bulletCount,
+      pageEstimate: 3,
+      status: "Excessive Length",
+      message: `⚠️ Over 2 pages (${effectiveLines} lines). Cut low-relevance bullets.`,
+      badgeClass: "badge-danger"
+    };
+  }
+}
+
