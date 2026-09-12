@@ -1868,5 +1868,137 @@ kbd {
   align-items: center;
 }
 
+/* ==========================================================================
+   COMPREHENSIVE MULTI-DEVICE RESPONSIVE SUITE
+   ========================================================================== */
+
+/* --- Tablet & Medium Screens (<= 960px) --- */
+@media (max-width: 960px) {
+  .matcher-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  .form-textarea {
+    min-height: 220px;
+  }
+}
+
+/* --- Mobile Landscape & Small Tablets (<= 768px) --- */
+@media (max-width: 768px) {
+  .ats-dashboard-layout {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  .ats-gauge-container {
+    padding: 1rem;
+  }
+  .diff-split-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .pipeline-analytics-bar {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+  }
+  .amazon-lp-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .linkedin-engine-layout {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  .hook-formula-selector {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Standard Mobile (<= 640px) --- */
+@media (max-width: 640px) {
+  .humanizer-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+  .google-dimensions-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .google-role-selector-grid {
+    grid-template-columns: 1fr;
+  }
+  .amazon-lp-grid {
+    grid-template-columns: 1fr;
+  }
+  .floating-match-hud {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    justify-content: space-between;
+    padding: 0.4rem 0.65rem;
+    gap: 0.5rem;
+  }
+  .hud-actions {
+    gap: 0.25rem;
+  }
+  .hud-action-btn {
+    padding: 0.25rem 0.45rem;
+    font-size: 0.7rem;
+  }
+  .zen-container {
+    height: 100dvh;
+    height: 100vh;
+    border-radius: 0;
+    border: none;
+    padding: 0.85rem 1rem;
+  }
+  .outreach-tone-selector {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+  }
+  .outreach-tone-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* --- Ultra-Compact Mobile (<= 480px) --- */
+@media (max-width: 480px) {
+  .resume-view-toggles {
+    display: flex;
+    gap: 0.25rem;
+    width: 100%;
+  }
+  .btn-view-toggle {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+    padding: 0.4rem 0.35rem;
+    font-size: 0.72rem;
+  }
+  .star-input-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .side-drawer {
+    width: 90vw;
+  }
+  .tour-card {
+    padding: 1.5rem 1.25rem;
+  }
+  .tour-visual {
+    font-size: 2.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .tour-title {
+    font-size: 1.15rem;
+  }
+  .tour-desc {
+    font-size: 0.82rem;
+    margin-bottom: 1.25rem;
+  }
+}
+
 
 
