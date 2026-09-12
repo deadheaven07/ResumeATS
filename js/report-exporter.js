@@ -66,13 +66,15 @@ ${levelEval.recommendations.map(r => `- ${r}`).join("\n")}
  */
 export function generateAmazonAuditMarkdown(audit, candidateName = "Candidate", targetRole = "Amazon Software Development Engineer") {
   const dateStr = new Date().toISOString().split("T")[0];
-  const { amazonScore, tier, dimensions, lpCoverageCount, lpResults } = audit;
+  const { amazonScore, tier, dimensions, lpCoverageCount, lpMatches = [], missingLps = [] } = audit;
 
   let lpTable = "| Leadership Principle | Status | Matched Evidence Tokens |\n| :--- | :--- | :--- |\n";
-  lpResults.forEach(lp => {
-    const status = lp.covered ? "✅ Covered" : "❌ Missing";
-    const tokens = lp.matchedTokens.length > 0 ? lp.matchedTokens.join(", ") : "*None detected*";
-    lpTable += `| **${lp.name}** | ${status} | ${tokens} |\n`;
+  lpMatches.forEach(lp => {
+    const tokens = lp.matchedKeywords && lp.matchedKeywords.length > 0 ? lp.matchedKeywords.join(", ") : "*Implicit*";
+    lpTable += `| **${lp.name}** | ✅ Covered | ${tokens} |\n`;
+  });
+  missingLps.forEach(name => {
+    lpTable += `| **${name}** | ❌ Missing | *None detected* |\n`;
   });
 
   return `# Amazon Bar Raiser & 16 Leadership Principles Audit Report

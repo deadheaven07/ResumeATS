@@ -294,7 +294,7 @@ function initAtsMatcher() {
     if (!resumeHeatmap) return;
     const text = resumeInput.value;
     const matched = state.activeAtsAnalysis ? state.activeAtsAnalysis.matchedSkills : [];
-    const banned = BANNED_PATTERNS.map(b => b.pattern);
+    const banned = BANNED_PATTERNS.map(b => b.term);
     resumeHeatmap.innerHTML = generateResumeHeatmapHtml(text, matched, banned);
   }
 
@@ -383,7 +383,9 @@ function runAtsAnalysis() {
 
   // Show scorecard
   const scorecard = document.getElementById("ats-results-card");
-  scorecard.classList.add("active");
+  if (scorecard) {
+    scorecard.classList.add("active");
+  }
 
   // Animate circular gauge with counter rollup and ambient glow
   const gaugeNumber = document.getElementById("ats-gauge-score");
@@ -460,7 +462,7 @@ function runAtsAnalysis() {
   // Refresh live heatmap if visible
   const resumeHeatmap = document.getElementById("ats-resume-heatmap");
   if (resumeHeatmap && resumeHeatmap.style.display !== "none") {
-    const banned = BANNED_PATTERNS.map(b => b.pattern);
+    const banned = BANNED_PATTERNS.map(b => b.term);
     resumeHeatmap.innerHTML = generateResumeHeatmapHtml(resumeText, analysis.matchedSkills, banned);
   }
 
@@ -1710,7 +1712,7 @@ function runAmazonAudit() {
   if (container) {
     container.innerHTML = "";
     AMAZON_LEADERSHIP_PRINCIPLES.forEach(lp => {
-      const match = audit.lpMatches.find(m => m.lp.id === lp.id);
+      const match = (audit.lpMatches || []).find(m => (m.lp ? m.lp.id : m.id) === lp.id);
       const chip = document.createElement("div");
       if (match) {
         chip.className = "amazon-lp-chip matched";

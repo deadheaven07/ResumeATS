@@ -176,7 +176,7 @@ export function generateResumeHeatmapHtml(resumeText, matchedSkills = [], banned
   });
 
   // Highlight AI slop words (Rose line-through)
-  bannedWords.forEach(word => {
+  (bannedWords || []).filter(w => typeof w === "string" && w.trim().length > 0).forEach(word => {
     const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const regex = new RegExp(`\\b(${escaped})\\b`, "gi");
     html = html.replace(regex, `<span class="heatmap-slop" data-slop="$1" title="AI Buzzword / Corporate Slop: '$1' (Click for 1-click smart replacement)">$1</span>`);
