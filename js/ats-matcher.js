@@ -5,11 +5,15 @@
  */
 
 import { extractCanonicalSkills, STAR_ACTION_VERBS } from "./taxonomy.js";
+import { BANNED_PATTERNS } from "./humanizer.js";
+import { calculateConfidenceScore, decomposeAtsScore } from "./services/scoring-explainer.js";
 
 /**
  * Runs full ATS Gap Analysis between candidate resume and job description.
  */
-export function analyzeAtsMatch(resumeText, jobDescriptionText) {
+export function analyzeAtsMatch(resumeText, jobDescriptionText, options = {}) {
+  const strictness = options.strictness || "standard";
+
   if (!resumeText || !jobDescriptionText) {
     return {
       score: 0,
@@ -17,6 +21,8 @@ export function analyzeAtsMatch(resumeText, jobDescriptionText) {
       missingSkills: [],
       candidateSkills: [],
       jdSkills: [],
+      confidence: { score: 0, level: "N/A", explanation: "Missing input text." },
+      breakdown: null,
       summary: "Please provide both a Candidate Resume and Target Job Description."
     };
   }
@@ -44,17 +50,44 @@ export function analyzeAtsMatch(resumeText, jobDescriptionText) {
     }
   });
 
-  // Calculate weighted score (0 - 100)
-  let rawScore = totalWeight > 0 ? (earnedWeight / totalWeight) * 100 : 0;
+  // Calculate Action Verbs & Metrics Density
+  const allStarVerbs = Object.values(STAR_ACTION_VERBS).flat().map(v => v.toLowerCase());
+  const resumeWordsList = resumeText.toLowerCase().split(/\s+/).filter(Boolean);
+  let actionVerbCount = 0;
+  allStarVerbs.forEach(v => {
+    if (resumeWordsList.includes(v)) actionVerbCount++;
+  });
 
-  // Additional length and keyword coverage heuristic
-  const jdLength = jobDescriptionText.trim().split(/\s+/).length;
-  const resumeLength = resumeText.trim().split(/\s+/).length;
-  if (resumeLength < 100 && jdLength > 150) {
-    rawScore = Math.max(10, rawScore * 0.7); // Penalize excessively thin resume
-  }
+  const metricMatches = resumeText.match(/\b(?:\d+(?:\.\d+)?%|\$\d+(?:,\d+)*(?:\.\d+)?[kmb]?|\d+\s*(?:ms|seconds|minutes|hours|days|x|users|qps|req\/s))\b/gi) || [];
+  const metricsCount = metricMatches.length;
 
-  const matchScore = Math.min(100, Math.round(rawScore));
+  // AI Slop Buzzword detection
+  let slopCount = 0;
+  const lowerResume = resumeText.toLowerCase();
+  (BANNED_PATTERNS || []).forEach(item => {
+    if (lowerResume.includes(item.term.toLowerCase())) slopCount++;
+  });
+
+  // Decompose ATS Score into transparent mathematical pillars
+  const breakdown = decomposeAtsScore({
+    matchedSkills,
+    missingSkills,
+    slopCount,
+    hasMetrics: metricsCount > 0,
+    metricsCount,
+    actionVerbCount,
+    strictness
+  });
+
+  // Calculate Predictive Confidence Indicator
+  const confidence = calculateConfidenceScore({
+    jdText: jobDescriptionText,
+    resumeText,
+    jdSkillsCount: jdSkills.length,
+    resumeLength: resumeWordsList.length
+  });
+
+  const matchScore = breakdown.finalScore;
 
   // Determine ATS tier
   let statusTier = "Critical Gap";
@@ -71,7 +104,7 @@ export function analyzeAtsMatch(resumeText, jobDescriptionText) {
   }
 
   // Sort missing skills: hard skills and cloud/devops first
-  missingSkills.sort((a, b) => b.weight - a.weight);
+  missingSkills.sort((a, b) => (b.weight || 1.0) - (a.weight || 1.0));
 
   return {
     score: matchScore,
@@ -84,7 +117,9 @@ export function analyzeAtsMatch(resumeText, jobDescriptionText) {
     missingSkills,
     candidateSkills: resumeSkills,
     jdSkills,
-    summary: `${matchedSkills.length} of ${jdSkills.length} canonical requirements detected in resume.`
+    confidence,
+    breakdown,
+    summary: `${matchedSkills.length} of ${jdSkills.length} canonical requirements detected in resume (${confidence.level} Confidence).`
   };
 }
 
@@ -292,9 +327,11 @@ export function calculateResumePageBudget(resumeText) {
     const remaining = MAX_ONE_PAGE - effectiveLines;
     return {
       lineCount: effectiveLines,
+      totalLines: effectiveLines,
       bulletCount,
       pageEstimate: 1,
       status: "Optimal 1-Page Layout",
+      badgeText: "Optimal 1-Page Layout",
       message: `Fits cleanly on 1 page (${effectiveLines} / ${MAX_ONE_PAGE} lines. ${remaining} lines of budget left).`,
       badgeClass: "badge-success"
     };
@@ -302,27 +339,33 @@ export function calculateResumePageBudget(resumeText) {
     const overflow = effectiveLines - MAX_ONE_PAGE;
     return {
       lineCount: effectiveLines,
+      totalLines: effectiveLines,
       bulletCount,
       pageEstimate: 1.2,
       status: "Minor Spill Risk",
+      badgeText: "Minor Spill Risk",
       message: `⚠️ Spilling ${overflow} lines onto a 2nd page! Tighten 1-2 bullets to fit cleanly on 1 page.`,
       badgeClass: "badge-warning"
     };
   } else if (effectiveLines <= MAX_TWO_PAGE) {
     return {
       lineCount: effectiveLines,
+      totalLines: effectiveLines,
       bulletCount,
       pageEstimate: 2,
       status: "Solid 2-Page Layout",
+      badgeText: "Solid 2-Page Layout",
       message: `Clean 2-page senior executive layout (${effectiveLines} lines).`,
       badgeClass: "badge-cyan"
     };
   } else {
     return {
       lineCount: effectiveLines,
+      totalLines: effectiveLines,
       bulletCount,
       pageEstimate: 3,
       status: "Excessive Length",
+      badgeText: "Excessive Length",
       message: `⚠️ Over 2 pages (${effectiveLines} lines). Cut low-relevance bullets.`,
       badgeClass: "badge-danger"
     };

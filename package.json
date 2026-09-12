@@ -1,0 +1,21 @@
+{
+  "name": "resumetracker-ai",
+  "version": "2.0.0",
+  "description": "Production-grade, offline-first AI Career & ATS Optimization Platform",
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8088",
+    "test": "node --test test/*.test.js",
+    "test:unit": "node --test test/*.test.js",
+    "test:e2e": "node scratch/playwright_full_suite.js"
+  },
+  "keywords": [
+    "resume",
+    "ats",
+    "job-tracker",
+    "career-copilot",
+    "privacy-first"
+  ],
+  "author": "deadheaven07",
+  "license": "MIT"
+}

@@ -97,7 +97,17 @@ The algorithms, layout structures, and copywriting engines in ResumeATS are cali
 - **Application Pipeline (CRM):** 5-stage Kanban board with live analytics (Active Count, Interview Rate, Offer Conversion, Cycle Velocity).
 - **Global Command Palette (`Cmd+K` / `Ctrl+K`) & Slide-Out Navigation Drawer.**
 
-### 10. Linear-Grade UX & Power User Suite
+### 10. Enterprise Platform Architecture (v2.0)
+- **Multi-Resume Profile Management:** Easily maintain, duplicate, switch, and delete tailored resume variations (e.g. *Senior Fullstack*, *Distributed Systems*, *Cloud Architect*) with real-time active persistence.
+- **Transparent 4-Pillar Score Explainer:** Mathematical decomposition into Canonical Hard Skills (45%), Seniority/Scope Breadth (20%), STAR Quantifiable Density (20%), and Anti-AI Slop Deductions (-15%), accompanied by predictive confidence metrics (*High*, *Moderate*, *Low*).
+- **Audit Version History & Progression Diffs:** Save immutable ATS audit snapshots, compare delta progression over time (+4% score, skills resolved vs remaining keyword gaps), and restore historical resume states in 1 click.
+- **3-Tab SaaS Settings Modal:**
+  - *Career Goals:* Target job title, compensation target ($ / € / £ / ₹), workplace model (Remote/Hybrid/Onsite), and minimum ATS threshold.
+  - *Data & Backup:* Local storage telemetry counter (profiles, audits, tracked jobs, KB used), 1-click JSON backup export & restore, and safe workspace reset.
+  - *Privacy & AI:* Gemini API configuration, strict offline-only mode, and Web Audio synthesizer controls.
+- **Native Unit & E2E Testing Suite:** Built-in `node:test` test suite with 100% passing tests and headless Playwright E2E browser automation verifying zero console errors.
+
+### 11. Linear-Grade UX & Power User Suite
 - **Synthesized Web Audio Micro-Haptics:** Native Web Audio API audio synthesis (zero audio files) emitting subtle clicks, tactile pops, and celebratory chimes with persistent mute toggle (`⌘ + M`).
 - **Keyboard Shortcuts HUD (`?`):** `⌘ / Ctrl + Enter` to run analysis from within any textarea, single-key `1`–`8` module jumping, `⌘ + D` diff tuner, `⌘ + O` outreach pitch kit, and `⌘ + P` ATS print dialog.
 - **Sticky Floating Match HUD:** Compact glassmorphic mini-scorecard docking at the bottom-right when scrolling past the main results card.
@@ -111,7 +121,7 @@ The algorithms, layout structures, and copywriting engines in ResumeATS are cali
 ## 🚀 Getting Started
 
 ### Local Quickstart
-ResumeATS runs entirely on standard web APIs with zero build tools or external package managers required:
+ResumeATS runs entirely on standard web APIs with zero mandatory build tools:
 
 ```bash
 # Clone repository
@@ -119,16 +129,31 @@ git clone https://github.com/deadheaven07/ResumeATS.git
 cd ResumeATS
 
 # Run local development server
-python3 -m http.server 8088
+npm start # or: python3 -m http.server 8088
 ```
 
 Open [http://localhost:8088](http://localhost:8088) in your web browser.
+
+### Running Automated Tests
+
+ResumeATS features a native zero-dependency unit test suite using Node.js built-in test runner:
+
+```bash
+# Run unit test suite (ATS Matcher, Storage Repository, Score Explainer)
+npm test
+
+# Run directly via Node
+node test/run_tests.js
+```
 
 ---
 
 ## 🛠️ Architecture & Technology
 
+- **Architecture:** Clean Service & Controller pattern (`js/services/`, `js/controllers/`) with Pub/Sub State Manager (`AppStore`)
+- **Persistence:** Repository pattern via `StorageService` (`localStorage` with transparent in-memory fallback for headless testing)
 - **Frontend:** Semantic HTML5, Modern Vanilla CSS Design Tokens (Luminous Light Mode default + Dark Mode toggle)
-- **Logic:** Native ES6+ JavaScript modules (100% dependency-free, zero build step)
-- **Data Privacy:** 100% local in-browser computation (`localStorage` persistence, zero tracking)
+- **Logic:** Native ES6+ JavaScript modules (100% dependency-free runtime, zero build step)
+- **Data Privacy:** 100% local in-browser computation (`localStorage` persistence, zero third-party telemetry)
 - **Design System:** Inter typography, Glassmorphism, Floating Segmented Nav, Animated Counter Rollups, Dynamic Radial Scorecard Glows
+

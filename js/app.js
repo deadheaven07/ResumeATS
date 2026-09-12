@@ -19,6 +19,11 @@ import { generateAutoTuneDiffs, applyApprovedDiffs } from "./diff-engine.js";
 import { generateOutreachKit, OUTREACH_TONES } from "./outreach-engine.js";
 import { isAudioEnabled, toggleAudio, playTick, playPop, playChime } from "./audio-engine.js";
 import { downloadMarkdownFile, generateGoogleAuditMarkdown, generateAmazonAuditMarkdown } from "./report-exporter.js";
+import { storageService } from "./services/storage-service.js";
+import { appStore } from "./services/state-manager.js";
+import { settingsController } from "./controllers/settings-controller.js";
+import { historyController } from "./controllers/history-controller.js";
+import { atsController } from "./controllers/ats-controller.js";
 
 // Initialize Subsystems
 const jobTracker = new JobTracker();
@@ -46,6 +51,12 @@ export function showToast(message, type = "info") {
     toast.style.transition = "all 0.3s ease";
     setTimeout(() => toast.remove(), 300);
   }, 3200);
+}
+
+if (typeof window !== "undefined") {
+  window.showToast = showToast;
+  window.storageService = storageService;
+  window.appStore = appStore;
 }
 
 // Dynamic Ambient Radial Scorecard Glow
@@ -159,6 +170,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initAudio();
   initTabs();
   initAtsMatcher();
+  atsController.init();
+  historyController.init();
   initGoogleCopilot();
   initAmazonCopilot();
   initInterviewCoach();
@@ -254,6 +267,12 @@ function initAtsMatcher() {
   const jdInput = document.getElementById("ats-jd-input");
   const btnAnalyze = document.getElementById("btn-run-ats");
   const btnLoadSample = document.getElementById("btn-load-ats-sample");
+
+  // Populate active profile resume if present
+  const activeProfile = storageService.getActiveProfile();
+  if (activeProfile && activeProfile.resumeText && !resumeInput.value.trim()) {
+    resumeInput.value = activeProfile.resumeText;
+  }
 
   // In-Browser Client-Side File Ingestion Dropzone
   setupDropzone({
@@ -380,6 +399,7 @@ function runAtsAnalysis() {
 
   const analysis = analyzeAtsMatch(resumeText, jdText);
   state.activeAtsAnalysis = analysis;
+  atsController.setMatchResult(analysis);
 
   // Show scorecard
   const scorecard = document.getElementById("ats-results-card");
@@ -1159,28 +1179,15 @@ function saveJobFromModal() {
    SETTINGS & OPTIONAL GEMINI CLIENT MODAL
    ========================================================================== */
 function initSettingsModal() {
-  const modal = document.getElementById("settings-modal");
-  const openBtn = document.getElementById("btn-open-settings");
-  const closeBtn = document.getElementById("btn-close-settings");
-  const saveBtn = document.getElementById("btn-save-settings");
-  const apiKeyInput = document.getElementById("settings-api-key");
-  const modelSelect = document.getElementById("settings-model-select");
-
-  openBtn.addEventListener("click", () => {
-    apiKeyInput.value = geminiClient.apiKey || "";
-    modelSelect.value = geminiClient.model || "gemini-2.5-flash";
-    modal.classList.add("active");
-  });
-
-  closeBtn.addEventListener("click", () => {
-    modal.classList.remove("active");
-  });
-
-  saveBtn.addEventListener("click", () => {
-    geminiClient.setApiKey(apiKeyInput.value);
-    geminiClient.setModel(modelSelect.value);
-    modal.classList.remove("active");
-    showToast("Settings saved!", "success");
+  settingsController.init();
+  const settings = storageService.getSettings();
+  if (settings.geminiApiKey) {
+    geminiClient.setApiKey(settings.geminiApiKey);
+  }
+  appStore.subscribe(st => {
+    if (st.settings?.geminiApiKey !== undefined) {
+      geminiClient.setApiKey(st.settings.geminiApiKey);
+    }
   });
 }
 

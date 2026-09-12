@@ -2000,5 +2000,170 @@ kbd {
   }
 }
 
+/* --------------------------------------------------------------------------
+   ENTERPRISE PLATFORM UPGRADE: PROFILE SWITCHER, AUDIT HISTORY & SETTINGS
+   -------------------------------------------------------------------------- */
+.profile-switcher-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.profile-select-sm {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.profile-select-sm:focus {
+  border-color: var(--primary-accent);
+  outline: none;
+}
+
+/* Settings 3-Tab Modal */
+.settings-tabs-nav {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 18px;
+  padding-bottom: 8px;
+}
+
+.settings-tab-btn {
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.settings-tab-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.settings-tab-btn.active {
+  color: #ffffff;
+  background: var(--primary-accent);
+}
+
+.settings-tab-pane {
+  display: none;
+  animation: fadeInPane 0.25s ease forwards;
+}
+
+.settings-tab-pane.active {
+  display: block;
+}
+
+@keyframes fadeInPane {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Audit History Table */
+.audit-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.audit-history-table th {
+  padding: 10px 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 2px solid var(--border-color);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.audit-history-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.audit-history-table tr:hover td {
+  background: var(--bg-tertiary);
+}
+
+.btn-xs {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+.btn-outline-primary {
+  color: var(--primary-accent);
+  background: transparent;
+  border: 1px solid var(--primary-accent);
+}
+
+.btn-outline-primary:hover {
+  background: var(--primary-accent);
+  color: #ffffff;
+}
+
+.btn-outline-danger {
+  color: var(--danger-color);
+  background: transparent;
+  border: 1px solid var(--danger-color);
+}
+
+.btn-outline-danger:hover {
+  background: var(--danger-color);
+  color: #ffffff;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+/* Score Explainer Pillars */
+.pillar-row {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.pillar-row:hover {
+  transform: translateX(2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.progress-bar-track {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.badge-cyan {
+  background: rgba(6, 182, 212, 0.12);
+  color: #06b6d4;
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.badge-purple {
+  background: rgba(139, 92, 246, 0.12);
+  color: #8b5cf6;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
 
 
