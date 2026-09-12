@@ -1,0 +1,593 @@
+/* ==========================================================================
+   RESUMETRACKER: MODULE SPECIFIC STYLES
+   ATS Gauge, Slop Highlighter, LinkedIn Simulator, Profile Optimizer
+   Optimized for Luminous Light Palette with Dark Theme Compatibility
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   MODULE 1: ATS & RESUME MATCHER
+   -------------------------------------------------------------------------- */
+.matcher-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 960px) {
+  .matcher-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.input-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.sample-toggle-btn {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  background: rgba(79, 70, 229, 0.06);
+  border: 1px dashed rgba(79, 70, 229, 0.4);
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.sample-toggle-btn:hover {
+  background: rgba(79, 70, 229, 0.12);
+  transform: translateY(-1px);
+}
+
+.action-bar-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1.5rem 0 2rem 0;
+}
+
+.btn-analyze-pulse {
+  padding: 0.95rem 2.75rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-violet) 100%);
+  color: #ffffff;
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 20px rgba(79, 70, 229, 0.35);
+}
+
+.btn-analyze-pulse:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(79, 70, 229, 0.5);
+}
+
+/* Results Scorecard */
+.ats-results-card {
+  display: none;
+  margin-bottom: 2.5rem;
+  border-color: rgba(79, 70, 229, 0.3);
+}
+
+.ats-results-card.active {
+  display: block;
+}
+
+.ats-dashboard-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+  align-items: center;
+}
+
+@media (max-width: 800px) {
+  .ats-dashboard-layout {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+}
+
+.ats-gauge-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-card);
+}
+
+.circular-gauge {
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+
+.circular-gauge svg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.gauge-bg {
+  fill: none;
+  stroke: var(--border-subtle);
+  stroke-width: 10;
+}
+
+.gauge-progress {
+  fill: none;
+  stroke: var(--accent-emerald);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 440;
+  stroke-dashoffset: 440;
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.5s ease;
+}
+
+.gauge-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-number {
+  font-family: var(--font-heading);
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: var(--text-heading);
+  line-height: 1;
+}
+
+.gauge-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
+
+.gauge-tier-badge {
+  margin-top: 1rem;
+  font-size: 0.82rem;
+}
+
+.ats-skills-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.skills-category-group h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.skill-tags-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.skill-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+
+.skill-tag-matched {
+  background: var(--accent-emerald-subtle);
+  color: var(--accent-emerald-text);
+  border: 1px solid var(--accent-emerald-border);
+}
+
+.skill-tag-missing {
+  background: var(--accent-rose-subtle);
+  color: var(--accent-rose-text);
+  border: 1px solid var(--accent-rose-border);
+  cursor: pointer;
+}
+
+.skill-tag-missing:hover {
+  background: #ffe4e6;
+  transform: translateY(-1px);
+}
+
+.skill-tag-add-btn {
+  font-size: 0.72rem;
+  opacity: 0.85;
+  margin-left: 0.2rem;
+  font-weight: 700;
+}
+
+/* STAR Rewriter Card */
+.star-builder-card {
+  margin-top: 2rem;
+  border-top: 3px solid var(--accent-primary);
+}
+
+.star-input-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (max-width: 860px) {
+  .star-input-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.star-preview-box {
+  background: var(--bg-elevated);
+  border: 1px solid rgba(79, 70, 229, 0.25);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  margin-top: 1rem;
+}
+
+.star-preview-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-primary);
+  margin-bottom: 0.45rem;
+}
+
+.star-output-text {
+  font-family: var(--font-sans);
+  font-size: 0.98rem;
+  color: var(--text-main);
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   MODULE 2: ANTI-AI HUMANIZER ENGINE
+   -------------------------------------------------------------------------- */
+.humanizer-stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.9rem 1.25rem;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 1rem;
+}
+
+.humanizer-stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.stat-value {
+  font-size: 1.08rem;
+  font-weight: 800;
+  color: var(--text-heading);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.slop-findings-container {
+  display: none;
+  margin-top: 1.25rem;
+  padding: 1.1rem;
+  border-radius: var(--radius-md);
+  background: var(--accent-rose-subtle);
+  border: 1px solid var(--accent-rose-border);
+}
+
+.slop-findings-container.active {
+  display: block;
+}
+
+.slop-word-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.slop-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-surface);
+  color: var(--accent-rose-text);
+  border: 1px solid var(--accent-rose-border);
+  padding: 0.35rem 0.8rem;
+  border-radius: var(--radius-full);
+  font-size: 0.84rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+.slop-arrow {
+  color: var(--text-muted);
+}
+
+.slop-replacement {
+  color: var(--accent-emerald-text);
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   MODULE 3: LINKEDIN THOUGHT LEADERSHIP & HOOK ENGINE
+   -------------------------------------------------------------------------- */
+.linkedin-engine-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 2rem;
+}
+
+@media (max-width: 1024px) {
+  .linkedin-engine-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hook-formula-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (max-width: 640px) {
+  .hook-formula-selector {
+    grid-template-columns: 1fr;
+  }
+}
+
+.formula-card-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--text-secondary);
+}
+
+.formula-card-btn:hover {
+  border-color: var(--accent-cyan);
+  color: var(--text-main);
+  background: var(--bg-card-hover);
+}
+
+.formula-card-btn.active {
+  border-color: var(--accent-cyan);
+  background: var(--accent-cyan-subtle);
+  color: var(--accent-cyan-text);
+  box-shadow: 0 0 0 2px var(--accent-cyan-border);
+}
+
+.formula-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-heading);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.formula-desc {
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+  display: block;
+}
+
+/* LinkedIn Preview Simulator */
+.linkedin-simulator-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-lg);
+  padding: 1.35rem;
+  box-shadow: var(--shadow-card);
+}
+
+[data-theme="dark"] .linkedin-simulator-card {
+  background: #1b1f24;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.li-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.li-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.li-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.li-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+[data-theme="dark"] .li-name {
+  color: #f1f5f9;
+}
+
+.li-headline {
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.25;
+}
+
+.li-timestamp {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-top: 0.1rem;
+}
+
+.li-post-body {
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #1e293b;
+  white-space: pre-wrap;
+  margin-bottom: 1.25rem;
+}
+
+[data-theme="dark"] .li-post-body {
+  color: #e2e8f0;
+}
+
+.above-the-fold-highlight {
+  background: rgba(79, 70, 229, 0.08);
+  border-left: 3px solid var(--accent-primary);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin-bottom: 0.6rem;
+  color: var(--text-heading);
+}
+
+.li-fold-marker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+  color: #0284c7;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.li-fold-marker::before, .li-fold-marker::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #bae6fd;
+}
+
+.li-first-comment-box {
+  background: var(--bg-elevated);
+  border: 1px dashed var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+  margin-top: 1rem;
+}
+
+/* --------------------------------------------------------------------------
+   MODULE 4: PROFILE CONVERSION OPTIMIZER
+   -------------------------------------------------------------------------- */
+.profile-optimizer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .profile-optimizer-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.char-limit-indicator {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.char-limit-indicator.danger {
+  color: var(--accent-rose);
+}
+
+.checklist-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.checklist-item:hover {
+  background: var(--bg-card-hover);
+  border-color: #cbd5e1;
+}
+
+.checklist-item input[type="checkbox"] {
+  margin-top: 0.2rem;
+  accent-color: var(--accent-primary);
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.checklist-content {
+  flex: 1;
+}
+
+.checklist-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  display: block;
+}
+
+.checklist-weight {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}

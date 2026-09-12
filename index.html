@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResumeTracker: AI Career & Personal Brand Copilot</title>
+  <meta name="description" content="AI Career Engineer and Personal Brand Strategist. ATS resume optimization with O*NET/Lightcast taxonomy, Anti-AI humanizer, and high-impact LinkedIn hook engine.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/modules.css">
+  <link rel="stylesheet" href="css/kanban.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Main Header -->
+    <header class="app-header">
+      <div class="brand-wrapper">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-title-group">
+          <h1>ResumeTracker <span class="brand-badge">AI Career & Brand Copilot</span></h1>
+          <p style="font-size: 0.78rem; color: var(--text-muted);">ATS Taxonomy Engine • Anti-AI Humanizer • LinkedIn Thought Leadership</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-toggle-theme" class="btn btn-secondary btn-sm" title="Toggle Light / Dark Mode">
+          <span id="theme-toggle-icon">🌙</span> <span id="theme-toggle-label">Dark Theme</span>
+        </button>
+        <button id="btn-open-settings" class="btn btn-secondary btn-sm" title="Configure AI & API Settings">
+          <span>⚙️</span> Settings
+        </button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs-wrapper" aria-label="Main Navigation">
+      <ul class="nav-tabs" role="tablist">
+        <li role="presentation">
+          <button class="nav-tab-btn active" role="tab" aria-selected="true" data-tab="ats-matcher" id="tab-ats-matcher">
+            <span>🎯</span> ATS & Resume Matcher <span class="tab-badge">Module 1</span>
+          </button>
+        </li>
+        <li role="presentation">
+          <button class="nav-tab-btn" role="tab" aria-selected="false" data-tab="humanizer" id="tab-humanizer">
+            <span>🛡️</span> Anti-AI Humanizer <span class="tab-badge">Module 2</span>
+          </button>
+        </li>
+        <li role="presentation">
+          <button class="nav-tab-btn" role="tab" aria-selected="false" data-tab="linkedin-engine" id="tab-linkedin-engine">
+            <span>🚀</span> LinkedIn Hook Engine <span class="tab-badge">Module 3</span>
+          </button>
+        </li>
+        <li role="presentation">
+          <button class="nav-tab-btn" role="tab" aria-selected="false" data-tab="profile-optimizer" id="tab-profile-optimizer">
+            <span>👤</span> Profile Optimizer <span class="tab-badge">Module 4</span>
+          </button>
+        </li>
+        <li role="presentation">
+          <button class="nav-tab-btn" role="tab" aria-selected="false" data-tab="tracker" id="tab-tracker">
+            <span>📋</span> Application Tracker <span class="tab-badge">Kanban</span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- TAB 1: ATS & RESUME MATCHER -->
+    <main id="panel-ats-matcher" class="tab-content-panel active" role="tabpanel" aria-labelledby="tab-ats-matcher">
+      <!-- Input Split Grid -->
+      <div class="matcher-grid">
+        <!-- Resume Input Card -->
+        <div class="glass-card">
+          <div class="input-panel-header">
+            <h3 class="card-title"><span>📄</span> Candidate Resume</h3>
+            <button id="btn-load-ats-sample" class="sample-toggle-btn">Load Demo Profile</button>
+          </div>
+          <p class="card-subtitle" style="margin-bottom: 0.75rem;">Paste markdown or raw text. Skills are mapped to standardized O*NET/Lightcast taxonomy.</p>
+          <textarea id="ats-resume-input" class="form-textarea" placeholder="Paste your resume markdown, bullet points, or experience here..."></textarea>
+        </div>
+
+        <!-- Target Job Description Card -->
+        <div class="glass-card">
+          <div class="input-panel-header">
+            <h3 class="card-title"><span>💼</span> Target Job Description</h3>
+            <span class="badge badge-neutral" style="font-size:0.72rem;">Lightcast Aligned</span>
+          </div>
+          <p class="card-subtitle" style="margin-bottom: 0.75rem;">Paste the full job posting. Parser automatically extracts hard skills, tools, and certifications.</p>
+          <textarea id="ats-jd-input" class="form-textarea" placeholder="Paste the target job description requirements here..."></textarea>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <div class="action-bar-center">
+        <button id="btn-run-ats" class="btn btn-primary btn-analyze-pulse">
+          <span>⚡ Run ATS Gap Analysis</span>
+        </button>
+      </div>
+
+      <!-- ATS Results Dashboard -->
+      <div id="ats-results-card" class="glass-card ats-results-card">
+        <div class="card-header">
+          <h3 class="card-title"><span>📊</span> ATS Match & Canonical Gap Report</h3>
+          <span id="ats-gauge-tier" class="badge badge-success">Match Complete</span>
+        </div>
+
+        <div class="ats-dashboard-layout">
+          <!-- Circular Gauge -->
+          <div class="ats-gauge-container">
+            <div class="circular-gauge">
+              <svg viewBox="0 0 160 160">
+                <circle class="gauge-bg" cx="80" cy="80" r="70"></circle>
+                <circle id="ats-gauge-circle" class="gauge-progress" cx="80" cy="80" r="70"></circle>
+              </svg>
+              <div class="gauge-text">
+                <div id="ats-gauge-score" class="gauge-number">0</div>
+                <div class="gauge-label">ATS Score</div>
+              </div>
+            </div>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:0.75rem; text-align:center;">
+              Based on weighted canonical skill taxonomies (O*NET & Lightcast logic)
+            </div>
+          </div>
+
+          <!-- Skills Breakdown -->
+          <div class="ats-skills-breakdown">
+            <!-- Missing Skills (Actionable) -->
+            <div class="skills-category-group">
+              <h4 style="color:var(--accent-rose-text);"><span>⚠️</span> Missing Critical Keywords & Skills (Gap Analysis):</h4>
+              <div id="ats-missing-skills-cloud" class="skill-tags-cloud"></div>
+              <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.4rem;">
+                Click any missing skill to auto-populate the STAR Rewriter below with a tailored bullet point template.
+              </p>
+            </div>
+
+            <!-- Matched Skills -->
+            <div class="skills-category-group">
+              <h4 style="color:var(--accent-emerald-text);"><span>✓</span> Verified Canonical Matches:</h4>
+              <div id="ats-matched-skills-cloud" class="skill-tags-cloud"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STAR Bullet Rewriter -->
+        <div class="glass-card star-builder-card">
+          <div class="card-header">
+            <h3 class="card-title"><span>⭐</span> STAR Method Resume Bullet Rewriter</h3>
+            <span class="badge badge-neutral">[Action Verb] + [Context/Problem] + [Quantifiable Outcome]</span>
+          </div>
+          <p class="card-subtitle" style="margin-bottom: 1rem;">
+            Format your achievements using the STAR methodology. Strictly excludes AI slop verbs like <em>spearhead</em> and <em>leverage</em>.
+          </p>
+
+          <div class="star-input-grid">
+            <div class="form-group">
+              <label class="form-label">Action Verb</label>
+              <select id="star-verb-select" class="form-select"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Context / Problem Solved</label>
+              <input type="text" id="star-context-input" class="form-control" placeholder="e.g. distributed backend microservices handling high-throughput payments">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Quantifiable Outcome</label>
+              <input type="text" id="star-outcome-input" class="form-control" placeholder="e.g. decreasing p99 latency by 38% and saving $40,000/yr">
+            </div>
+          </div>
+
+          <div class="star-preview-box">
+            <div class="star-preview-label">Live Formatted STAR Bullet:</div>
+            <div id="star-output-text" class="star-output-text">Your structured STAR bullet point will appear here in real-time.</div>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1rem;">
+            <button id="btn-copy-star" class="btn btn-secondary btn-sm">Copy STAR Bullet</button>
+            <button id="btn-append-star" class="btn btn-success btn-sm">+ Append to Resume</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- TAB 2: ANTI-AI HUMANIZER ENGINE -->
+    <section id="panel-humanizer" class="tab-content-panel" role="tabpanel" aria-labelledby="tab-humanizer">
+      <div class="glass-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title"><span>🛡️</span> Anti-AI Humanizer Engine</h3>
+            <p class="card-subtitle">Real-time slop detector, readability grader, and formatting auditor. Enforces conversational human tone.</p>
+          </div>
+          <div style="display:flex; gap:0.5rem;">
+            <button id="btn-load-slop-sample" class="sample-toggle-btn">Load AI Slop Sample</button>
+            <button id="btn-humanize-all" class="btn btn-primary btn-sm">⚡ Humanize Text</button>
+          </div>
+        </div>
+
+        <!-- Real-Time Stats Bar -->
+        <div class="humanizer-stats-bar">
+          <div class="humanizer-stat-item">
+            <span class="stat-label">Readability Level</span>
+            <span id="stat-readability" class="stat-value">0 (N/A)</span>
+          </div>
+          <div class="humanizer-stat-item">
+            <span class="stat-label">Em-Dashes (Max 1)</span>
+            <span id="stat-em-dashes" class="stat-value">0</span>
+          </div>
+          <div class="humanizer-stat-item">
+            <span class="stat-label">Emojis (0-2 max, No 🚀/🔥)</span>
+            <span id="stat-emojis" class="stat-value">0</span>
+          </div>
+          <div class="humanizer-stat-item">
+            <span class="stat-label">Staccato Stacks</span>
+            <span id="stat-staccato" class="stat-value">0</span>
+          </div>
+          <div class="humanizer-stat-item">
+            <span class="stat-label">Banned Buzzwords</span>
+            <span id="stat-slop-count" class="stat-value">0</span>
+          </div>
+        </div>
+
+        <!-- Editor Area -->
+        <div class="form-group">
+          <textarea id="humanizer-input" class="form-textarea" style="min-height: 240px;" placeholder="Paste your resume summary, LinkedIn draft, or cold outreach email to audit for AI buzzwords and robotic formatting..."></textarea>
+        </div>
+
+        <!-- Slop Findings Highlight Container -->
+        <div id="slop-findings-container" class="slop-findings-container">
+          <strong style="font-size:0.85rem; color:var(--accent-rose-text);">Detected AI Buzzwords & Corporate Jargon:</strong>
+          <div id="slop-word-pills" class="slop-word-pills"></div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.25rem;">
+          <span style="font-size:0.75rem; color:var(--text-muted);">
+            Enforces zero tolerance for: <em>delve, leverage, supercharge, game-changer, spearhead, testaments, beacon, tapestry</em>.
+          </span>
+          <button id="btn-copy-humanized" class="btn btn-secondary btn-sm">Copy Clean Text</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: LINKEDIN THOUGHT LEADERSHIP & HOOK ENGINE -->
+    <section id="panel-linkedin-engine" class="tab-content-panel" role="tabpanel" aria-labelledby="tab-linkedin-engine">
+      <div class="linkedin-engine-layout">
+        <!-- Editor & Hook Controls -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h3 class="card-title"><span>🚀</span> Thought Leadership & Hook Engine</h3>
+            <span class="badge badge-neutral">900–1,300 Char Sweet Spot</span>
+          </div>
+
+          <!-- Formula Selection -->
+          <label class="form-label">Select Hook Formula</label>
+          <div class="hook-formula-selector">
+            <button class="formula-card-btn active" data-formula="false_binary">
+              <span class="formula-title">False Binary Dissolve</span>
+              <span class="formula-desc">"Everyone argues X vs Y. The real problem is Z."</span>
+            </button>
+            <button class="formula-card-btn" data-formula="yoy_pivot">
+              <span class="formula-title">Year-over-Year Pivot</span>
+              <span class="formula-desc">"In 2023, I prioritized X. In 2026, I only care about Y."</span>
+            </button>
+            <button class="formula-card-btn" data-formula="scarce_math">
+              <span class="formula-title">Scarce-Shots Math</span>
+              <span class="formula-desc">Break down an industry metric into counter-intuitive math.</span>
+            </button>
+          </div>
+
+          <!-- Dynamic Formula Fields -->
+          <div id="li-formula-fields"></div>
+
+          <!-- Story Proof Points -->
+          <div class="form-group">
+            <label class="form-label">Core Story, Systems Scaled & Proof Points</label>
+            <textarea id="li-story-input" class="form-textarea" style="min-height: 140px;" placeholder="Describe the actual challenge, tactical decisions, and quantifiable business outcomes..."></textarea>
+          </div>
+
+          <!-- Call to Action -->
+          <div class="form-group">
+            <label class="form-label">Call-to-Action (Engaging Question)</label>
+            <input type="text" id="li-cta-input" class="form-control" placeholder="e.g. What is your team's policy on microservices?">
+          </div>
+
+          <!-- First Comment Link Box -->
+          <div class="form-group">
+            <label class="form-label">External Link (Staged for First Comment)</label>
+            <input type="url" id="li-external-link-input" class="form-control" placeholder="https://github.com/your-repo or case study link">
+            <small style="color:var(--text-muted); font-size:0.72rem;">Keeping links in the first comment prevents LinkedIn feed reach penalization.</small>
+          </div>
+
+          <div class="form-group" style="margin-top:1.25rem;">
+            <label class="form-label">Full Compiled Markdown Output</label>
+            <textarea id="li-full-post-editor" class="form-textarea" style="min-height: 160px;"></textarea>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+            <button id="btn-copy-li-comment" class="btn btn-secondary btn-sm">Copy First Comment Link</button>
+            <button id="btn-copy-li-post" class="btn btn-primary btn-sm">Copy LinkedIn Post</button>
+          </div>
+        </div>
+
+        <!-- LinkedIn Simulator Preview -->
+        <div class="linkedin-simulator-card">
+          <div class="card-header" style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem;">
+            <span style="font-size:0.82rem; font-weight:700; color:var(--accent-cyan); text-transform:uppercase;">LinkedIn Feed Simulator</span>
+            <div id="li-char-meter" style="display:flex; align-items:center; gap:0.5rem;"></div>
+          </div>
+
+          <div class="li-header" style="margin-top: 1rem;">
+            <div class="li-avatar">AC</div>
+            <div class="li-meta">
+              <span class="li-name">Alex Chen</span>
+              <span class="li-headline">Staff Platform Engineer | Distributed Systems & High-Scale Cloud</span>
+              <span class="li-timestamp">1d • Edited • 🌐</span>
+            </div>
+          </div>
+
+          <!-- Simulated Post Body with Above-the-fold highlight -->
+          <div id="li-sim-body" class="li-post-body"></div>
+
+          <!-- First Comment Preview -->
+          <div id="li-sim-first-comment" class="li-first-comment-box"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: PROFILE CONVERSION OPTIMIZER -->
+    <section id="panel-profile-optimizer" class="tab-content-panel" role="tabpanel" aria-labelledby="tab-profile-optimizer">
+      <div class="profile-optimizer-grid">
+        <!-- Headline & About Builder -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h3 class="card-title"><span>🎯</span> Headline Formula Generator</h3>
+            <span id="profile-headline-counter" class="char-limit-indicator">0 / 220 chars</span>
+          </div>
+          <p class="card-subtitle" style="margin-bottom: 1rem;">
+            Formula: <code>[Primary Role] helping [Target Audience] achieve [Specific Result] | [Key Tech Stack]</code>
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">Primary Role</label>
+            <input type="text" id="profile-role-input" class="form-control" placeholder="e.g. Staff Platform Engineer">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Target Audience</label>
+            <input type="text" id="profile-audience-input" class="form-control" placeholder="e.g. high-growth FinTech scaleups">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Specific Result</label>
+            <input type="text" id="profile-result-input" class="form-control" placeholder="e.g. scale microservices to 50k TPS with 99.99% uptime">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Key Tech Stack / Credential</label>
+            <input type="text" id="profile-tech-input" class="form-control" placeholder="e.g. Go | Kubernetes | AWS Solutions Architect">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Generated Headline</label>
+            <input type="text" id="profile-headline-output" class="form-control" readonly style="background: var(--bg-elevated); font-weight:600; color:var(--text-heading); border: 1px solid var(--border-card);">
+          </div>
+          <button id="btn-copy-headline" class="btn btn-secondary btn-sm">Copy Headline</button>
+
+          <!-- 3-Part About Section -->
+          <div style="margin-top: 2rem; border-top: 1px solid var(--border-subtle); padding-top: 1.5rem;">
+            <div class="card-header">
+              <h3 class="card-title"><span>📝</span> 3-Part About Section Builder</h3>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Part 1: The Core Thesis (What you believe / solve)</label>
+              <textarea id="about-thesis-input" class="form-textarea" style="min-height: 90px;" placeholder="I believe that reliable distributed systems come from clear domain boundaries..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Part 2: Career Proof Points (1 per line)</label>
+              <textarea id="about-proofs-input" class="form-textarea" style="min-height: 100px;" placeholder="Scaled real-time pipeline to 45k TPS&#10;Cut annual AWS infrastructure spend by $180k..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Part 3: Call-to-Action (Clear outreach path)</label>
+              <input type="text" id="about-cta-input" class="form-control" placeholder="e.g. Open to advising high-velocity teams. Reach me at alex@example.com.">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Formatted About Section</label>
+              <textarea id="about-full-output" class="form-textarea" style="min-height: 140px;" readonly></textarea>
+            </div>
+            <button id="btn-copy-about" class="btn btn-primary btn-sm">Copy About Section</button>
+          </div>
+        </div>
+
+        <!-- Profile Conversion Audit Checklist -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h3 class="card-title"><span>✅</span> Profile Conversion Readiness Audit</h3>
+            <span id="profile-audit-score" class="badge badge-neutral">0%</span>
+          </div>
+          <p class="card-subtitle" style="margin-bottom: 1.25rem;">
+            Checklist to turn your profile into a high-conversion landing page for inbound recruiters and executive talent scouts.
+          </p>
+
+          <div id="profile-checklist-container" class="checklist-group"></div>
+
+          <div style="margin-top:2rem; background:var(--accent-cyan-subtle); border:1px solid var(--accent-cyan-border); border-radius:var(--radius-md); padding:1rem;">
+            <strong style="color:var(--accent-cyan-text); font-size:0.85rem;">Why This Works:</strong>
+            <p style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.35rem; line-height:1.45;">
+              Recruiters spend an average of 6 seconds on an initial LinkedIn scan. Value-proposition headlines and structured proof points immediately validate senior capability and trigger direct inbound reachouts.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: APPLICATION TRACKER (KANBAN) -->
+    <section id="panel-tracker" class="tab-content-panel" role="tabpanel" aria-labelledby="tab-tracker">
+      <div class="tracker-toolbar">
+        <div class="tracker-search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="tracker-search-input" class="form-control tracker-search-input" placeholder="Search applications, companies, notes...">
+        </div>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <button id="btn-add-job-modal" class="btn btn-primary btn-sm"><span>+</span> Add Target Job</button>
+          <button id="btn-export-jobs" class="btn btn-secondary btn-sm" title="Backup applications JSON">Export JSON</button>
+          <button id="btn-import-jobs" class="btn btn-secondary btn-sm" title="Restore applications JSON">Import JSON</button>
+        </div>
+      </div>
+
+      <!-- Kanban Columns -->
+      <div id="kanban-board-container" class="kanban-board"></div>
+    </section>
+  </div>
+
+  <!-- JOB APPLICATION MODAL -->
+  <div id="job-modal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="card-header">
+        <h3 id="job-modal-title" class="card-title">Add Target Job Application</h3>
+        <button id="btn-close-modal" class="card-icon-btn" style="width:30px; height:30px;">✕</button>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+        <div class="form-group">
+          <label class="form-label">Company *</label>
+          <input type="text" id="modal-company" class="form-control" placeholder="e.g. Stripe">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role Title *</label>
+          <input type="text" id="modal-role" class="form-control" placeholder="e.g. Staff Backend Engineer">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+        <div class="form-group">
+          <label class="form-label">Location</label>
+          <input type="text" id="modal-location" class="form-control" placeholder="e.g. Remote / San Francisco">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Salary Range</label>
+          <input type="text" id="modal-salary" class="form-control" placeholder="e.g. $190k - $240k">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+        <div class="form-group">
+          <label class="form-label">Status Stage</label>
+          <select id="modal-status" class="form-select">
+            <option value="saved">Target / Saved</option>
+            <option value="applied">Applied</option>
+            <option value="interviewing">Interviewing</option>
+            <option value="offer">Offer Received</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ATS Score (%)</label>
+          <input type="number" id="modal-score" class="form-control" min="0" max="100" placeholder="e.g. 88">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Next Step / Priority Action</label>
+        <input type="text" id="modal-nextstep" class="form-control" placeholder="e.g. Architecture interview on Friday with VP of Eng">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Job Posting Link</label>
+        <input type="url" id="modal-link" class="form-control" placeholder="https://company.com/careers/role">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Job Description (For 1-Click ATS Gap Match)</label>
+        <textarea id="modal-jd" class="form-textarea" style="min-height:90px;" placeholder="Paste job requirements here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Personal Notes & Referral Context</label>
+        <input type="text" id="modal-notes" class="form-control" placeholder="e.g. Referred by Sarah from Platform team.">
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1.5rem;">
+        <button id="btn-save-job" class="btn btn-primary">Save Application</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settings-modal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="card-header">
+        <h3 class="card-title"><span>⚙️</span> Engine Settings & Gemini AI</h3>
+        <button id="btn-close-settings" class="card-icon-btn" style="width:30px; height:30px;">✕</button>
+      </div>
+
+      <p class="card-subtitle" style="margin-bottom: 1.25rem;">
+        The application is 100% functional offline using built-in algorithmic taxonomy matching and rule engines. You may optionally enter a Gemini API Key to enable GenAI completions.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">Gemini API Key (Optional)</label>
+        <input type="password" id="settings-api-key" class="form-control" placeholder="AIzaSy...">
+        <small style="color:var(--text-muted); font-size:0.75rem;">Key is stored strictly in your browser's localStorage.</small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Model Selection</label>
+        <select id="settings-model-select" class="form-select">
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended - Ultra Fast)</option>
+          <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+          <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+        </select>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1.5rem;">
+        <button id="btn-save-settings" class="btn btn-primary">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Toast Notifications Container -->
+  <div id="toast-container"></div>
+
+  <!-- Application Script -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
