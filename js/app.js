@@ -126,6 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initTracker();
   initSettingsModal();
   initCommandPaletteAndExport();
+  initSideDrawer();
 });
 
 function initTheme() {
@@ -182,6 +183,10 @@ export function switchTab(tabId) {
   window.location.hash = tabId;
 
   document.querySelectorAll(".nav-tab-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-tab") === tabId);
+  });
+
+  document.querySelectorAll(".drawer-link-btn").forEach(btn => {
     btn.classList.toggle("active", btn.getAttribute("data-tab") === tabId);
   });
 
@@ -866,6 +871,17 @@ function updatePipelineAnalytics(allJobs = jobTracker.getAll()) {
   if (interviewRateEl) interviewRateEl.textContent = `${interviewRate}%`;
   if (offerRateEl) offerRateEl.textContent = `${offerRate}%`;
   if (avgDaysEl) avgDaysEl.textContent = "14d";
+
+  // Update Drawer Pulse Widget
+  const drawerTotal = document.getElementById("drawer-pulse-total");
+  const drawerInterview = document.getElementById("drawer-pulse-interview");
+  const drawerOffers = document.getElementById("drawer-pulse-offers");
+  const drawerBadgeCount = document.getElementById("drawer-badge-job-count");
+
+  if (drawerTotal) drawerTotal.textContent = total;
+  if (drawerInterview) drawerInterview.textContent = `${interviewRate}%`;
+  if (drawerOffers) drawerOffers.textContent = offerCount;
+  if (drawerBadgeCount) drawerBadgeCount.textContent = `${total} Jobs`;
 }
 
 function renderKanbanBoard(filterQuery = "") {
@@ -1839,5 +1855,136 @@ function initCommandPaletteAndExport() {
       switchTab("tracker");
       openJobModal();
     }
+  }
+}
+
+/* ==========================================================================
+   MODULE: SLIDE-OUT NAVIGATION & TOOLS DRAWER
+   ========================================================================== */
+function initSideDrawer() {
+  const btnOpen = document.getElementById("btn-open-drawer");
+  const btnClose = document.getElementById("btn-close-drawer");
+  const overlay = document.getElementById("side-drawer-overlay");
+  const searchInput = document.getElementById("drawer-search-input");
+  const drawerLinks = document.querySelectorAll(".drawer-link-btn");
+
+  if (!overlay) return;
+
+  function openDrawer() {
+    overlay.style.display = "block";
+    void overlay.offsetWidth; // Force reflow
+    overlay.classList.add("active");
+
+    if (searchInput) {
+      searchInput.value = "";
+      filterDrawerLinks("");
+      setTimeout(() => searchInput.focus(), 120);
+    }
+
+    // Sync active state with currentTab
+    drawerLinks.forEach(btn => {
+      btn.classList.toggle("active", btn.getAttribute("data-tab") === state.currentTab);
+    });
+
+    // Refresh pulse stats
+    updatePipelineAnalytics();
+  }
+
+  function closeDrawer() {
+    overlay.classList.remove("active");
+    setTimeout(() => {
+      if (!overlay.classList.contains("active")) {
+        overlay.style.display = "none";
+      }
+    }, 280);
+  }
+
+  if (btnOpen) btnOpen.addEventListener("click", openDrawer);
+  if (btnClose) btnClose.addEventListener("click", closeDrawer);
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) {
+      closeDrawer();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && overlay.classList.contains("active")) {
+      closeDrawer();
+    }
+  });
+
+  drawerLinks.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const targetTab = btn.getAttribute("data-tab");
+      if (targetTab) {
+        switchTab(targetTab);
+        closeDrawer();
+      }
+    });
+  });
+
+  function filterDrawerLinks(query) {
+    const q = query.toLowerCase().trim();
+    const sections = document.querySelectorAll(".side-drawer-section");
+
+    sections.forEach(section => {
+      const links = section.querySelectorAll(".drawer-link-btn");
+      if (links.length === 0) return;
+
+      let visibleCount = 0;
+      links.forEach(link => {
+        const title = link.querySelector(".drawer-link-title")?.textContent.toLowerCase() || "";
+        const sub = link.querySelector(".drawer-link-sub")?.textContent.toLowerCase() || "";
+        const matches = !q || title.includes(q) || sub.includes(q);
+        link.style.display = matches ? "flex" : "none";
+        if (matches) visibleCount++;
+      });
+
+      section.style.display = visibleCount > 0 ? "block" : "none";
+    });
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      filterDrawerLinks(e.target.value);
+    });
+  }
+
+  // Quick Action Buttons inside drawer
+  const btnCmd = document.getElementById("drawer-btn-cmd");
+  const btnExport = document.getElementById("drawer-btn-export");
+  const btnTheme = document.getElementById("drawer-btn-theme");
+  const btnSettings = document.getElementById("drawer-btn-settings");
+
+  if (btnCmd) {
+    btnCmd.addEventListener("click", () => {
+      closeDrawer();
+      const trigger = document.getElementById("btn-cmd-palette-trigger");
+      if (trigger) trigger.click();
+    });
+  }
+
+  if (btnExport) {
+    btnExport.addEventListener("click", () => {
+      closeDrawer();
+      const trigger = document.getElementById("btn-export-ats-pdf");
+      if (trigger) trigger.click();
+    });
+  }
+
+  if (btnTheme) {
+    btnTheme.addEventListener("click", () => {
+      const trigger = document.getElementById("btn-toggle-theme");
+      if (trigger) trigger.click();
+    });
+  }
+
+  if (btnSettings) {
+    btnSettings.addEventListener("click", () => {
+      closeDrawer();
+      const trigger = document.getElementById("btn-open-settings");
+      if (trigger) trigger.click();
+    });
   }
 }

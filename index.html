@@ -25,6 +25,11 @@
     <!-- Main Header -->
     <header class="app-header">
       <div class="brand-wrapper">
+        <button id="btn-open-drawer" class="drawer-trigger-btn" title="Open Navigation & Tools Drawer" aria-label="Open Navigation Drawer">
+          <span class="drawer-hamburger-line"></span>
+          <span class="drawer-hamburger-line"></span>
+          <span class="drawer-hamburger-line"></span>
+        </button>
         <div class="brand-icon">⚡</div>
         <div class="brand-title-group">
           <h1>ResumeTracker <span class="brand-badge">AI Career & Brand Copilot</span></h1>
@@ -1032,6 +1037,178 @@
         <button id="btn-save-settings" class="btn btn-primary">Save Settings</button>
       </div>
     </div>
+  </div>
+
+  <!-- SIDE DRAWER NAVIGATION & TOOLS OVERLAY -->
+  <div id="side-drawer-overlay" class="side-drawer-overlay" aria-hidden="true">
+    <aside id="side-drawer" class="side-drawer" role="dialog" aria-label="Quick Navigation and Tools Drawer">
+      <!-- Drawer Header -->
+      <div class="side-drawer-header">
+        <div class="side-drawer-brand">
+          <div class="brand-icon" style="width:34px; height:34px; font-size:1rem;">⚡</div>
+          <div>
+            <div style="font-weight:800; font-size:1.02rem; color:var(--text-heading); letter-spacing:-0.02em;">ResumeTracker</div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">AI Career & Brand Copilot</div>
+          </div>
+        </div>
+        <button id="btn-close-drawer" class="card-icon-btn" style="width:32px; height:32px;" title="Close Drawer (Esc)">✕</button>
+      </div>
+
+      <!-- Quick Search in Drawer -->
+      <div class="side-drawer-search">
+        <span>🔍</span>
+        <input type="text" id="drawer-search-input" placeholder="Search modules, tools, skills..." autocomplete="off">
+      </div>
+
+      <!-- Drawer Content -->
+      <div class="side-drawer-body">
+        <!-- Category 1: ATS & Optimization -->
+        <div class="side-drawer-section">
+          <div class="side-drawer-section-title">Resume & Optimization</div>
+          <div class="side-drawer-links">
+            <button class="drawer-link-btn active" data-tab="ats-matcher">
+              <span class="drawer-link-icon">🎯</span>
+              <div class="drawer-link-info">
+                <span class="drawer-link-title">ATS & Resume Matcher</span>
+                <span class="drawer-link-sub">O*NET/Lightcast Gap Analysis</span>
+              </div>
+              <span class="badge badge-neutral" style="font-size:0.65rem;">Mod 1</span>
+            </button>
+
+            <button class="drawer-link-btn" data-tab="humanizer">
+              <span class="drawer-link-icon">🛡️</span>
+              <div class="drawer-link-info">
+                <span class="drawer-link-title">Anti-AI Humanizer</span>
+                <span class="drawer-link-sub">Slop Linter & Readability</span>
+              </div>
+              <span class="badge badge-neutral" style="font-size:0.65rem;">Mod 2</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Category 2: Big Tech Copilots -->
+        <div class="side-drawer-section">
+          <div class="side-drawer-section-title">Big Tech Copilots</div>
+          <div class="side-drawer-links">
+            <button class="drawer-link-btn" data-tab="google-copilot">
+              <span class="drawer-link-icon">🇬</span>
+              <div class="drawer-link-info">
+                <span class="drawer-link-title">Google Careers Copilot</span>
+                <span class="drawer-link-sub">Laszlo Bock XYZ & L3/L5</span>
+              </div>
+              <span class="badge badge-neutral" style="font-size:0.65rem; color:#1a73e8;">XYZ</span>
+            </button>
+
+            <button class="drawer-link-btn" data-tab="amazon-copilot">
+              <span class="drawer-link-icon">📦</span>
+              <div class="drawer-link-info">
+                <span class="drawer-link-title">Amazon Bar Raiser</span>
+                <span class="drawer-link-sub">16 Leadership Principles & OpEx</span>
+              </div>
+              <span class="badge badge-neutral" style="font-size:0.65rem; color:#d97706;">16 LPs</span>
+            </button>
+
+            <button class="drawer-link-btn" data-tab="interview-coach">
+              <span class="drawer-link-icon">🎯</span>
+              <div class="drawer-link-info">
+                <span class="drawer-link-title">AI Interview Prep Coach</span>
+                <span class="drawer-link-sub">Gap-Driven Question Blueprints</span>
+              </div>
+              <span class="badge badge-neutral" style="font-size:0.65rem; color:#7c3aed;">AI Prep</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Category 3: Personal Branding -->
+        <div class="side-drawer-section">
+          <div class="side-drawer-section-title">Personal Brand & Thought Leadership</div>
+          <div class="side-drawer-links">
+            <button class="drawer-link-btn" data-tab="linkedin-engine">
+              <span class="drawer-link-icon">🚀</span>
+              <div class="drawer-link-info">
+                <span class="drawer-link-title">LinkedIn Hook Engine</span>
+                <span class="drawer-link-sub">Viral Hooks & Feed Simulator</span>
+              </div>
+              <span class="badge badge-neutral" style="font-size:0.65rem;">Mod 3</span>
+            </button>
+
+            <button class="drawer-link-btn" data-tab="profile-optimizer">
+              <span class="drawer-link-icon">👤</span>
+              <div class="drawer-link-info">
+                <span class="drawer-link-title">Profile Conversion Optimizer</span>
+                <span class="drawer-link-sub">Headline & About Section</span>
+              </div>
+              <span class="badge badge-neutral" style="font-size:0.65rem;">Mod 4</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Category 4: Job Tracker -->
+        <div class="side-drawer-section">
+          <div class="side-drawer-section-title">Career CRM</div>
+          <div class="side-drawer-links">
+            <button class="drawer-link-btn" data-tab="tracker">
+              <span class="drawer-link-icon">📋</span>
+              <div class="drawer-link-info">
+                <span class="drawer-link-title">Application Tracker</span>
+                <span class="drawer-link-sub">Kanban Pipeline & Metrics</span>
+              </div>
+              <span class="badge badge-success" id="drawer-badge-job-count" style="font-size:0.65rem;">0 Jobs</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Drawer Pipeline Summary Widget -->
+        <div class="side-drawer-widget">
+          <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:0.6rem;">
+            Active Pipeline Pulse
+          </div>
+          <div class="drawer-pulse-row">
+            <div>
+              <div id="drawer-pulse-total" style="font-size:1.15rem; font-weight:800; color:var(--text-heading);">0</div>
+              <div style="font-size:0.68rem; color:var(--text-secondary);">Applications</div>
+            </div>
+            <div>
+              <div id="drawer-pulse-interview" style="font-size:1.15rem; font-weight:800; color:#059669;">0%</div>
+              <div style="font-size:0.68rem; color:var(--text-secondary);">Interview Rate</div>
+            </div>
+            <div>
+              <div id="drawer-pulse-offers" style="font-size:1.15rem; font-weight:800; color:#7c3aed;">0</div>
+              <div style="font-size:0.68rem; color:var(--text-secondary);">Offers</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Utilities -->
+        <div class="side-drawer-section">
+          <div class="side-drawer-section-title">Quick Actions</div>
+          <div class="drawer-quick-actions">
+            <button id="drawer-btn-cmd" class="btn btn-secondary btn-sm" style="width:100%; justify-content:flex-start;">
+              <span>⌨️</span> Open Command Palette <kbd class="cmd-kbd" style="margin-left:auto;">⌘K</kbd>
+            </button>
+            <button id="drawer-btn-export" class="btn btn-secondary btn-sm" style="width:100%; justify-content:flex-start;">
+              <span>🖨️</span> Export Single-Column ATS PDF
+            </button>
+            <button id="drawer-btn-theme" class="btn btn-secondary btn-sm" style="width:100%; justify-content:flex-start;">
+              <span>🌓</span> Toggle Light / Dark Mode
+            </button>
+            <button id="drawer-btn-settings" class="btn btn-secondary btn-sm" style="width:100%; justify-content:flex-start;">
+              <span>⚙️</span> Gemini API & Model Settings
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Drawer Footer -->
+      <div class="side-drawer-footer">
+        <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.75rem; color:#059669; font-weight:600;">
+          <span>🔒</span> 100% Client-Side Engine (Offline-Ready)
+        </div>
+        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.25rem;">
+          Zero candidate resumes sent to remote servers.
+        </div>
+      </div>
+    </aside>
   </div>
 
   <!-- COMMAND PALETTE MODAL (Cmd+K / Ctrl+K) -->
