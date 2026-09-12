@@ -97,6 +97,15 @@ The algorithms, layout structures, and copywriting engines in ResumeATS are cali
 - **Application Pipeline (CRM):** 5-stage Kanban board with live analytics (Active Count, Interview Rate, Offer Conversion, Cycle Velocity).
 - **Global Command Palette (`Cmd+K` / `Ctrl+K`) & Slide-Out Navigation Drawer.**
 
+### 10. Linear-Grade UX & Power User Suite
+- **Synthesized Web Audio Micro-Haptics:** Native Web Audio API audio synthesis (zero audio files) emitting subtle clicks, tactile pops, and celebratory chimes with persistent mute toggle (`⌘ + M`).
+- **Keyboard Shortcuts HUD (`?`):** `⌘ / Ctrl + Enter` to run analysis from within any textarea, single-key `1`–`8` module jumping, `⌘ + D` diff tuner, `⌘ + O` outreach pitch kit, and `⌘ + P` ATS print dialog.
+- **Sticky Floating Match HUD:** Compact glassmorphic mini-scorecard docking at the bottom-right when scrolling past the main results card.
+- **1-Click Slop Smart-Fix Popovers:** Floating replacement popovers directly on flagged AI clichés in the Live Keyword Heatmap.
+- **Zen Focus Writing Mode (`⌘ + Z`):** Distraction-free writing canvas with live word, character, and line count meters and active ATS match badge.
+- **Markdown Audit Exporters (`.md`):** 1-click formatted report downloads for Google ATS rubrics and Amazon 16 Leadership Principles audits.
+- **Interactive Onboarding Tour:** 3-step guided walkthrough for first-time visitors with `localStorage` completion memory.
+
 ---
 
 ## 🚀 Getting Started
